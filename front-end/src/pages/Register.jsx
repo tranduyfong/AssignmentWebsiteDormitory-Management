@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, Mail, ShieldCheck } from 'lucide-react';
+import axiosClient from '../utils/axios.interceptor'; // Import axiosClient
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -10,18 +11,39 @@ const Register = () => {
         password: '',
         confirmPassword: ''
     });
+    const [errorMsg, setErrorMsg] = useState(''); // State lưu thông báo lỗi
     const navigate = useNavigate();
 
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
+        setErrorMsg(''); // Xóa lỗi cũ
+
+        // Kiểm tra mật khẩu xác nhận
         if (formData.password !== formData.confirmPassword) {
-            alert("Mật khẩu xác nhận không khớp!");
+            setErrorMsg("Mật khẩu xác nhận không khớp!");
             return;
         }
-        // Xử lý logic đăng ký ở đây
-        console.log('Đăng ký với:', formData);
-        alert('Đăng ký thành công! Vui lòng đăng nhập.');
-        navigate('/login');
+
+        try {
+            // Chuẩn bị payload gửi lên Backend
+            const payload = {
+                msv: formData.msv,
+                fullname: formData.fullname,
+                email: formData.email,
+                password: formData.password
+            };
+
+            // Gọi API Đăng ký
+            await axiosClient.post('/auth/register', payload);
+
+            // Thông báo thành công và chuyển hướng
+            alert('Đăng ký thành công! Vui lòng đăng nhập.');
+            navigate('/login');
+
+        } catch (error) {
+            // Bắt lỗi từ Backend (VD: Trùng MSV)
+            setErrorMsg(error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại!');
+        }
     };
 
     return (
@@ -37,6 +59,14 @@ const Register = () => {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-2xl sm:rounded-[24px] sm:px-10 border border-slate-100">
+
+                    {/* Hiển thị thông báo lỗi nếu có */}
+                    {errorMsg && (
+                        <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold text-center animate-in fade-in">
+                            {errorMsg}
+                        </div>
+                    )}
+
                     <form className="space-y-5" onSubmit={handleRegister}>
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
@@ -82,12 +112,13 @@ const Register = () => {
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <ShieldCheck className="h-5 w-5 text-slate-400" />
+                                    {/* Đổi icon thành Mail cho đúng ngữ cảnh */}
+                                    <Mail className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input
-                                    type="text"
+                                    type="email"
                                     required
-                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800 uppercase"
+                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
                                     placeholder="Nhập email sinh viên"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
