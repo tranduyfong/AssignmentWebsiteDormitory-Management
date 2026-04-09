@@ -1,18 +1,72 @@
 const pool = require('../configs/db.config');
 
-// --- NỘI QUY ---
+// --- QUẢN LÝ NỘI QUY ---
+
+// 1. Lấy danh sách tất cả nội quy (Admin)
+exports.getAllRules = async (req, res) => {
+    try {
+        // Lấy tất cả, sắp xếp theo ngày cập nhật mới nhất
+        const [rules] = await pool.execute('SELECT * FROM NoiQuy ORDER BY NgayCapNhat DESC');
+        res.status(200).json(rules);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi khi tải danh sách nội quy.' });
+    }
+};
+
+// 2. Thêm nội quy mới
 exports.createRule = async (req, res) => {
     const { tieuDe, danhMuc, noiDung, trangThai } = req.body;
-    const ngayCapNhat = new Date().toISOString().split('T')[0];
+    const ngayCapNhat = new Date().toISOString().split('T')[0]; // Lấy ngày hôm nay
+
+    // Quy ước: Trang thái gửi lên có thể là số (1, 0) hoặc chuỗi
+    const status = (trangThai === 1 || trangThai === 'Đang áp dụng') ? 1 : 0;
+
     try {
         await pool.execute(
             'INSERT INTO NoiQuy (TieuDe, DanhMuc, NoiDung, NgayCapNhat, TrangThai) VALUES (?, ?, ?, ?, ?)',
-            [tieuDe, danhMuc, noiDung, ngayCapNhat, trangThai === 'Đang áp dụng' ? 1 : 0]
+            [tieuDe, danhMuc, noiDung, ngayCapNhat, status]
         );
         res.status(201).json({ message: 'Thêm nội quy thành công!' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi khi thêm nội quy.' });
+    }
+};
+
+// 3. Cập nhật nội quy
+exports.updateRule = async (req, res) => {
+    const { id } = req.params; // MaNoiQuy
+    const { tieuDe, danhMuc, noiDung, trangThai } = req.body;
+    const ngayCapNhat = new Date().toISOString().split('T')[0]; // Cập nhật lại ngày sửa
+
+    const status = (trangThai === 1 || trangThai === 'Đang áp dụng') ? 1 : 0;
+
+    try {
+        const [result] = await pool.execute(
+            'UPDATE NoiQuy SET TieuDe = ?, DanhMuc = ?, NoiDung = ?, NgayCapNhat = ?, TrangThai = ? WHERE MaNoiQuy = ?',
+            [tieuDe, danhMuc, noiDung, ngayCapNhat, status, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy nội quy này.' });
+        }
+        res.status(200).json({ message: 'Cập nhật nội quy thành công!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi khi cập nhật nội quy.' });
+    }
+};
+
+// 4. Xóa nội quy
+exports.deleteRule = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await pool.execute('DELETE FROM NoiQuy WHERE MaNoiQuy = ?', [id]);
+        res.status(200).json({ message: 'Đã xóa nội quy thành công!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server khi xóa nội quy.' });
     }
 };
 
