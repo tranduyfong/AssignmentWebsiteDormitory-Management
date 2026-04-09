@@ -1,19 +1,19 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import Login from './pages/admin/Login';
+import Register from './pages/admin/Register';
 import AdminLayout from './layouts/AdminLayout';
-import Infrastructure from './pages/Infrastructure';
-import Students from './pages/Students';
-import Rooms from './pages/Rooms';
-import Incidents from './pages/Incidents';
-import Violations from './pages/Violations';
-import DormRules from './pages/DormRules';
-import Billing from './pages/Billing';
-import Reports from './pages/Reports';
-import Invoices from './pages/Invoices';
-import RoomAssignment from './pages/RoomAssignment';
-import Contracts from './pages/Contracts';
+import Infrastructure from './pages/admin/Infrastructure';
+import Students from './pages/admin/Students';
+import Rooms from './pages/admin/Rooms';
+import Incidents from './pages/admin/Incidents';
+import Violations from './pages/admin/Violations';
+import DormRules from './pages/admin/DormRules';
+import Billing from './pages/admin/Billing';
+import Reports from './pages/admin/Reports';
+import Invoices from './pages/admin/Invoices';
+import RoomAssignment from './pages/admin/RoomAssignment';
+import Contracts from './pages/admin/Contracts';
 import StudentLayout from './layouts/StudentLayout';
 import RoomRegistration from './pages/student/RoomRegistration';
 import RoomList from './pages/student/RoomList';
@@ -24,18 +24,17 @@ import MyViolations from './pages/student/MyViolations';
 import ViewRules from './pages/student/ViewRules';
 import SubmitIncident from './pages/student/SubmitIncident';
 
-// Placeholder cho Dashboard của Admin
-const AdminDashboard = () => <h1 className="text-2xl font-black uppercase text-slate-800">Dashboard Tổng Quan</h1>;
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        <Route path="/" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Reports />} /> 
           <Route path="students" element={<Students />} />
           <Route path="rooms" element={<Rooms />} />
           <Route path="infrastructure" element={<Infrastructure />} />

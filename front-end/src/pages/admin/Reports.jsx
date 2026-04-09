@@ -10,10 +10,10 @@ import {
 
 // --- MOCK DATA (Dữ liệu phục vụ báo cáo) ---
 const revenueData = [
-  { name: 'Tháng 1', phong: 420, dien: 150, nuoc: 85, chi_phi: 120 },
-  { name: 'Tháng 2', phong: 450, dien: 180, nuoc: 90, chi_phi: 130 },
-  { name: 'Tháng 3', phong: 440, dien: 210, nuoc: 95, chi_phi: 110 },
-  { name: 'Tháng 4', phong: 480, dien: 190, nuoc: 88, chi_phi: 140 },
+  { name: 'Tháng 1', phong: 420, dien: 150, nuoc: 85},
+  { name: 'Tháng 2', phong: 450, dien: 180, nuoc: 90 },
+  { name: 'Tháng 3', phong: 440, dien: 210, nuoc: 95 },
+  { name: 'Tháng 4', phong: 480, dien: 190, nuoc: 88},
 ];
 
 const occupancyData = [
@@ -104,7 +104,7 @@ const Reports = () => {
                 <Bar dataKey="phong" name="Tiền phòng" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="dien" name="Tiền điện" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="nuoc" name="Tiền nước" fill="#06b6d4" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="chi_phi" name="Chi phí sửa chữa" fill="#94a3b8" radius={[4, 4, 0, 0]} />
+                
               </BarChart>
             </ResponsiveContainer>
           </div>

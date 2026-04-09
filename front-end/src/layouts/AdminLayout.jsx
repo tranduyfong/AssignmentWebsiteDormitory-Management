@@ -14,7 +14,6 @@ const AdminLayout = () => {
         <Navbar isSidebarOpen={isSidebarOpen} setSidebarOpen={setSidebarOpen} />
         
         <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-[#f8fafc] custom-scrollbar">
-          {/* Các trang con sẽ hiển thị ở đây */}
           <Outlet />
         </main>
       </div>

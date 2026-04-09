@@ -6,9 +6,10 @@ import {
   FileText, ChevronRight, BookOpen, Receipt, FileSignature 
 } from 'lucide-react';
 
-const SidebarItem = ({ icon: Icon, label, to, collapsed }) => (
+const SidebarItem = ({ icon: Icon, label, to, collapsed,end = false }) => (
   <NavLink 
     to={to}
+    end={end}
     className={({ isActive }) => `
       w-full flex items-center p-3 mb-1 transition-all duration-200 rounded-xl group
       ${isActive 
@@ -16,7 +17,6 @@ const SidebarItem = ({ icon: Icon, label, to, collapsed }) => (
         : 'text-slate-600 hover:bg-slate-50 hover:text-[#00529C]'}
     `}
   >
-    {/* Sử dụng hàm để lấy isActive cho phần con bên trong */}
     {({ isActive }) => (
       <>
         <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
@@ -30,13 +30,12 @@ const SidebarItem = ({ icon: Icon, label, to, collapsed }) => (
 );
 
 const Sidebar = ({ isOpen }) => {
-  const humgBlue = "#00529C"; // Màu xanh Logo HUMG
+  const humgBlue = "#00529C"; 
 
   return (
     <aside 
       className={`${isOpen ? 'w-72' : 'w-20'} bg-white transition-all duration-300 flex flex-col shadow-xl z-20 h-screen border-r border-slate-100`}
     >
-      {/* HEADER: Màu xanh trùng màu logo trường */}
       <div 
         style={{ backgroundColor: humgBlue }}
         className={`p-5 flex items-center ${isOpen ? 'space-x-4' : 'justify-center'} shadow-md transition-all duration-300 h-24 flex-shrink-0`}
@@ -60,10 +59,9 @@ const Sidebar = ({ isOpen }) => {
         )}
       </div>
 
-      {/* NAVIGATION SECTION */}
       <nav className="flex-1 px-3 mt-6 overflow-y-auto sidebar-scroll space-y-1">
         
-        
+        <SidebarItem icon={FileText} label="Thống kê - Báo cáo" to="/admin" end={true} collapsed={!isOpen} />
         
         <div className="pt-2 pb-2 px-4">
           <p className={`text-[10px] font-bold text-slate-400 uppercase tracking-widest ${!isOpen && 'hidden'}`}>
@@ -72,9 +70,9 @@ const Sidebar = ({ isOpen }) => {
           {!isOpen && <div className="h-[1px] bg-slate-100 w-full"></div>}
         </div>
 
-        <SidebarItem icon={Users} label="Quản lý Sinh viên" to="/students" collapsed={!isOpen} />
-        <SidebarItem icon={Building2} label="Quản lý Khu, Tòa nhà" to="/infrastructure" collapsed={!isOpen} />
-        <SidebarItem icon={Home} label="Quản lý Phòng ở" to="/rooms" collapsed={!isOpen} />
+        <SidebarItem icon={Users} label="Quản lý Sinh viên" to="/admin/students" collapsed={!isOpen} />
+        <SidebarItem icon={Building2} label="Quản lý Khu, Tòa nhà" to="/admin/infrastructure" collapsed={!isOpen} />
+        <SidebarItem icon={Home} label="Quản lý Phòng ở" to="/admin/rooms" collapsed={!isOpen} />
         
         <div className="pt-4 pb-2 px-4">
           <p className={`text-[10px] font-bold text-slate-400 uppercase tracking-widest ${!isOpen && 'hidden'}`}>
@@ -83,8 +81,8 @@ const Sidebar = ({ isOpen }) => {
           {!isOpen && <div className="h-[1px] bg-slate-100 w-full"></div>}
         </div>
         
-        <SidebarItem icon={FileCheck} label="Xét duyệt & Phân phòng" to="/registrations" collapsed={!isOpen} />
-        <SidebarItem icon={FileSignature} label="Quản lý Hợp đồng" to="/contracts" collapsed={!isOpen} />
+        <SidebarItem icon={FileCheck} label="Xét duyệt & Phân phòng" to="/admin/registrations" collapsed={!isOpen} />
+        <SidebarItem icon={FileSignature} label="Quản lý Hợp đồng" to="/admin/contracts" collapsed={!isOpen} />
         
         <div className="pt-4 pb-2 px-4">
           <p className={`text-[10px] font-bold text-slate-400 uppercase tracking-widest ${!isOpen && 'hidden'}`}>
@@ -93,9 +91,8 @@ const Sidebar = ({ isOpen }) => {
           {!isOpen && <div className="h-[1px] bg-slate-100 w-full"></div>}
         </div>
 
-        <SidebarItem icon={CreditCard} label="Quản lý Thu phí" to="/billing" collapsed={!isOpen} />
-        <SidebarItem icon={Receipt} label="Quản lý Hóa đơn" to="/invoices" collapsed={!isOpen} />
-        <SidebarItem icon={FileText} label="Thống kê - Báo cáo" to="/reports" collapsed={!isOpen} />
+        <SidebarItem icon={CreditCard} label="Quản lý Thu phí" to="/admin/billing" collapsed={!isOpen} />
+        <SidebarItem icon={Receipt} label="Quản lý Hóa đơn" to="/admin/invoices" collapsed={!isOpen} />
         
         <div className="pt-4 pb-2 px-4">
           <p className={`text-[10px] font-bold text-slate-400 uppercase tracking-widest ${!isOpen && 'hidden'}`}>
@@ -104,14 +101,13 @@ const Sidebar = ({ isOpen }) => {
           {!isOpen && <div className="h-[1px] bg-slate-100 w-full"></div>}
         </div>
 
-        <SidebarItem icon={BookOpen} label="Quản lý Nội quy" to="/rules" collapsed={!isOpen} />
-        <SidebarItem icon={AlertTriangle} label="Quản lý Vi phạm" to="/violations" collapsed={!isOpen} />
-        <SidebarItem icon={MessageSquare} label="Phản ánh - Sự cố" to="/incidents" collapsed={!isOpen} />
+        <SidebarItem icon={BookOpen} label="Quản lý Nội quy" to="/admin/rules" collapsed={!isOpen} />
+        <SidebarItem icon={AlertTriangle} label="Quản lý Vi phạm" to="/admin/violations" collapsed={!isOpen} />
+        <SidebarItem icon={MessageSquare} label="Phản ánh - Sự cố" to="/admin/incidents" collapsed={!isOpen} />
 
         <div className="h-10"></div>
       </nav>
 
-      {/* FOOTER: Đăng xuất */}
       <div className="p-4 border-t border-slate-50 bg-slate-50/50">
         <button className={`w-full flex items-center p-3 text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all rounded-xl font-bold ${!isOpen && 'justify-center'}`}>
           <LogOut size={20} />
