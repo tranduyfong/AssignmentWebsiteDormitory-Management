@@ -1,17 +1,36 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight } from 'lucide-react';
+import axiosClient from '../utils/axios.interceptor'; // Import axiosClient bạn đã tạo
 
 const Login = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
+    const [errorMsg, setErrorMsg] = useState(''); // Thêm state để chứa thông báo lỗi
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Thêm logic xử lý API đăng nhập ở đây
-        console.log('Đăng nhập với:', formData);
-        // Tạm thời chuyển hướng thẳng vào dashboard
-        navigate('/');
+        setErrorMsg(''); // Xóa lỗi cũ khi bắt đầu request mới
+
+        try {
+            // Gọi API Đăng nhập tới Backend
+            const response = await axiosClient.post('/auth/login', formData);
+
+            // Lưu token và thông tin user vào localStorage
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('user', JSON.stringify(response.user));
+
+            // Phân luồng: VaiTro 0 là Admin, 1 là Sinh viên
+            if (response.user.role === 0) {
+                navigate('/'); // Đẩy vào Dashboard Admin
+            } else {
+                navigate('/student/rooms'); // Đẩy vào Cổng Sinh viên
+            }
+
+        } catch (error) {
+            // Lấy câu thông báo lỗi từ Backend trả về (nếu có), hoặc báo lỗi mạng
+            setErrorMsg(error.response?.data?.message || 'Tài khoản hoặc mật khẩu không chính xác!');
+        }
     };
 
     return (
@@ -36,6 +55,14 @@ const Login = () => {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-2xl sm:rounded-[24px] sm:px-10 border border-slate-100">
+
+                    {/* Hiển thị thông báo lỗi nếu đăng nhập thất bại */}
+                    {errorMsg && (
+                        <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold text-center animate-in fade-in">
+                            {errorMsg}
+                        </div>
+                    )}
+
                     <form className="space-y-6" onSubmit={handleLogin}>
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">

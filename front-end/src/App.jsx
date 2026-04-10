@@ -23,6 +23,7 @@ import PayInvoice from './pages/student/PayInvoice';
 import MyViolations from './pages/student/MyViolations';
 import ViewRules from './pages/student/ViewRules';
 import SubmitIncident from './pages/student/SubmitIncident';
+import { Toaster } from 'react-hot-toast';
 
 
 function App() {
@@ -48,29 +49,30 @@ function App() {
           <Route path="contracts" element={<Contracts />} />
         </Route>
 
-        <Route path="/student" element={<StudentLayout />}>
-          <Route index element={<Navigate to="/student/rooms" replace />} />
+          <Route path="/student" element={<StudentLayout />}>
+            <Route index element={<Navigate to="/student/rooms" replace />} />
 
-          <Route path="register-room" element={<RoomRegistration />} />
-          <Route path="rooms" element={<RoomList />} />
-          <Route path="contracts" element={<MyContracts />} />
-          <Route path="invoices" element={<MyInvoices />} />
-          <Route path="pay-invoice" element={<PayInvoice />} />
-          <Route path="violations" element={<MyViolations />} />
-          <Route path="rules" element={<ViewRules />} />
-          <Route path="incidents" element={<SubmitIncident />} />
-        </Route>
+            <Route path="register-room" element={<RoomRegistration />} />
+            <Route path="rooms" element={<RoomList />} />
+            <Route path="contracts" element={<MyContracts />} />
+            <Route path="invoices" element={<MyInvoices />} />
+            <Route path="pay-invoice" element={<PayInvoice />} />
+            <Route path="violations" element={<MyViolations />} />
+            <Route path="rules" element={<ViewRules />} />
+            <Route path="incidents" element={<SubmitIncident />} />
+          </Route>
 
-        <Route path="*" element={
-          <div className="min-h-screen flex items-center justify-center bg-slate-50">
-            <div className="text-center">
-              <h1 className="text-6xl font-black text-slate-300">404</h1>
-              <p className="text-slate-500 font-medium mt-2">Trang bạn tìm kiếm không tồn tại.</p>
+          <Route path="*" element={
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+              <div className="text-center">
+                <h1 className="text-6xl font-black text-slate-300">404</h1>
+                <p className="text-slate-500 font-medium mt-2">Trang bạn tìm kiếm không tồn tại.</p>
+              </div>
             </div>
-          </div>
-        } />
-      </Routes>
-    </BrowserRouter>
+          } />
+        </Routes>
+      </BrowserRouter>
+  
   );
 }
 

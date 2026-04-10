@@ -1,9 +1,9 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { 
-  Building2, Users, Home, FileCheck, CreditCard, 
-  AlertTriangle, MessageSquare, BarChart3, LogOut, 
-  FileText, ChevronRight, BookOpen, Receipt, FileSignature 
+import { NavLink, useNavigate } from 'react-router-dom'; // 1. Import thêm useNavigate
+import {
+  Building2, Users, Home, FileCheck, CreditCard,
+  AlertTriangle, MessageSquare, BarChart3, LogOut,
+  FileText, ChevronRight, BookOpen, Receipt, FileSignature
 } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, collapsed,end = false }) => (
@@ -12,8 +12,8 @@ const SidebarItem = ({ icon: Icon, label, to, collapsed,end = false }) => (
     end={end}
     className={({ isActive }) => `
       w-full flex items-center p-3 mb-1 transition-all duration-200 rounded-xl group
-      ${isActive 
-        ? 'bg-blue-50 text-[#00529C] shadow-sm' 
+      ${isActive
+        ? 'bg-blue-50 text-[#00529C] shadow-sm'
         : 'text-slate-600 hover:bg-slate-50 hover:text-[#00529C]'}
     `}
   >
@@ -33,27 +33,27 @@ const Sidebar = ({ isOpen }) => {
   const humgBlue = "#00529C"; 
 
   return (
-    <aside 
-      className={`${isOpen ? 'w-72' : 'w-20'} bg-white transition-all duration-300 flex flex-col shadow-xl z-20 h-screen border-r border-slate-100`}
+    <aside
+      className={`${isOpen ? 'w-72' : 'w-20'} bg-white transition-all duration-300 flex flex-col shadow-xl z-20 h-screen border-r border-slate-100 flex-shrink-0`}
     >
       <div 
         style={{ backgroundColor: humgBlue }}
         className={`p-5 flex items-center ${isOpen ? 'space-x-4' : 'justify-center'} shadow-md transition-all duration-300 h-24 flex-shrink-0`}
       >
         <div className="w-12 h-12 bg-white rounded-lg p-1.5 flex-shrink-0 shadow-lg border border-white/20">
-          <img 
-            src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_Truong_Dai_hoc_Mo_-_Dia_chat.jpg" 
-            alt="HUMG" 
+          <img
+            src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_Truong_Dai_hoc_Mo_-_Dia_chat.jpg"
+            alt="HUMG"
             className="w-full h-full object-contain rounded-sm"
           />
         </div>
         {isOpen && (
           <div className="flex flex-col overflow-hidden animate-in fade-in duration-500">
-            <span className="text-white font-black text-lg leading-tight uppercase tracking-tight">
+            <span className="text-white font-black text-lg leading-tight uppercase tracking-tight whitespace-nowrap">
               HUMG DORM
             </span>
-            <span className="text-blue-100 text-[10px] font-medium uppercase tracking-[0.1em] opacity-80">
-              Hệ thống quản lý Ký túc xá
+            <span className="text-blue-100 text-[10px] font-medium uppercase tracking-[0.1em] opacity-80 whitespace-nowrap">
+              Hệ thống quản lý
             </span>
           </div>
         )}
@@ -109,9 +109,14 @@ const Sidebar = ({ isOpen }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-50 bg-slate-50/50">
-        <button className={`w-full flex items-center p-3 text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all rounded-xl font-bold ${!isOpen && 'justify-center'}`}>
-          <LogOut size={20} />
-          {isOpen && <span className="ml-3 text-[13px] uppercase tracking-wider">Đăng xuất</span>}
+        {/* 4. Gắn sự kiện onClick vào nút bấm */}
+        <button
+          onClick={handleLogout}
+          className={`w-full flex items-center p-3 text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all rounded-xl font-bold ${!isOpen && 'justify-center'}`}
+          title={!isOpen ? "Đăng xuất" : ""}
+        >
+          <LogOut size={20} className="flex-shrink-0" />
+          {isOpen && <span className="ml-3 text-[13px] uppercase tracking-wider whitespace-nowrap">Đăng xuất</span>}
         </button>
       </div>
     </aside>
