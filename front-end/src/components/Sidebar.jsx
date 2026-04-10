@@ -109,9 +109,8 @@ const Sidebar = ({ isOpen }) => {
       </nav>
 
       <div className="p-4 border-t border-slate-50 bg-slate-50/50">
-        {/* 4. Gắn sự kiện onClick vào nút bấm */}
         <button
-          onClick={handleLogout}
+          // onClick={handleLogout}
           className={`w-full flex items-center p-3 text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all rounded-xl font-bold ${!isOpen && 'justify-center'}`}
           title={!isOpen ? "Đăng xuất" : ""}
         >

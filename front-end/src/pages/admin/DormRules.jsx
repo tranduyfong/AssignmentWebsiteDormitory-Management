@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Plus, Search, Edit, Trash2, FileText, CheckCircle, XCircle } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor';
+import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
 
 const DormRules = () => {

@@ -4,7 +4,7 @@ import {
   CheckCircle2, Hammer, Building2,
   Layers, X, LayoutGrid
 } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor'; // Import axiosClient
+import axiosClient from '../../utils/axios.interceptor';
 
 const Rooms = () => {
   // Thay thế dữ liệu cứng bằng mảng rỗng và thêm state loading

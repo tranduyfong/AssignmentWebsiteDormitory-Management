@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CheckCircle2, Home, Calendar, X, AlertCircle, Building2 } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor';
+import axiosClient from '../../utils/axios.interceptor';
 
 const RoomAssignment = () => {
   const [registrations, setRegistrations] = useState([]);

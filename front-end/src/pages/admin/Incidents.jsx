@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MessageSquare, Search, CheckCircle2, Wrench, XCircle } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor';
+import axiosClient from '../../utils/axios.interceptor';
 
 const Incidents = () => {
   const [incidents, setIncidents] = useState([]);

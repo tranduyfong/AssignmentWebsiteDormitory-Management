@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, Mail, ShieldCheck } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor'; // Import axiosClient
+import axiosClient from '../../utils/axios.interceptor';
 
 const Register = () => {
     const [formData, setFormData] = useState({

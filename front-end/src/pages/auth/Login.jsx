@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor'; // Import axiosClient bạn đã tạo
+import axiosClient from '../../utils/axios.interceptor';
 
 const Login = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });

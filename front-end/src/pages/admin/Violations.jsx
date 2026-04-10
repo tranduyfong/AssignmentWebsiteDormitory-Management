@@ -3,7 +3,7 @@ import {
   AlertTriangle, Search, Plus,
   Gavel, History, Trash2, X, CheckCircle2
 } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor';
+import axiosClient from '../../utils/axios.interceptor';
 
 const Violations = () => {
   const [violations, setViolations] = useState([]);

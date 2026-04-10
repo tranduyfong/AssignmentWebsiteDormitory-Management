@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, CreditCard, CheckCircle2, Clock, Home, Zap, Receipt, Calendar } from 'lucide-react';
-import axiosClient from '../utils/axios.interceptor'; // Nhúng Axios Client
+import axiosClient from '../../utils/axios.interceptor';
 
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
