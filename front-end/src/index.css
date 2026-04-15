@@ -23,3 +23,21 @@
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background-color: rgba(59, 130, 246, 0.5); /* Đổi sang màu Xanh Blue khi hover vào sidebar */
 }
+
+
+@media print {
+  * {
+    color: #1e293b !important;
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: none !important;
+  }
+  
+  /* Giữ lại màu cho các icon và badge quan trọng */
+  .text-blue-600 { color: #2563eb !important; }
+  .bg-blue-50 { background-color: #eff6ff !important; }
+  .text-red-600 { color: #dc2626 !important; }
+  .bg-red-50 { background-color: #fef2f2 !important; }
+  .text-emerald-600 { color: #059669 !important; }
+  .bg-emerald-50 { background-color: #ecfdf5 !important; }
+}

@@ -55,7 +55,15 @@ exports.approveRegistration = async (req, res) => {
         await connection.execute('UPDATE SinhVien SET MaPhong = ? WHERE MaSV = ?', [maPhong, maSV]);
 
         // Bước 4: Tăng số lượng sinh viên trong phòng lên 1
-        await connection.execute('UPDATE Phong SET SoSinhVienHienTai = SoSinhVienHienTai + 1 WHERE MaPhong = ?', [maPhong]);
+         await connection.execute(`
+            UPDATE Phong 
+            SET SoSinhVienHienTai = SoSinhVienHienTai + 1,
+                TrangThai = CASE 
+                    WHEN (SoSinhVienHienTai + 1) >= SucChua THEN 'Đã đầy'
+                    ELSE 'Còn chỗ'
+                END
+            WHERE MaPhong = ? AND TrangThai != 'Bảo trì'
+        `, [maPhong]);
 
         // Bước 5: (Tùy chọn) Tự động sinh Hợp đồng mới
         const ngayBatDau = new Date().toISOString().split('T')[0];
@@ -90,7 +98,8 @@ exports.getRules = async (req, res) => {
 
 // 5. Thêm mới sinh viên (Admin tạo)
 exports.createStudent = async (req, res) => {
-    const { msv, fullname, email, sdt, cccd, password } = req.body;
+    // Thêm gioiTinh và ngaySinh vào destructuring
+    const { msv, fullname, email, sdt, cccd, password, gioiTinh, ngaySinh } = req.body;
     const connection = await pool.getConnection();
 
     try {
@@ -102,7 +111,7 @@ exports.createStudent = async (req, res) => {
 
         // Tạo tài khoản (VaiTro = 1)
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password || '123456aA@', salt); // Mật khẩu mặc định nếu không nhập
+        const hashedPassword = await bcrypt.hash(password || '123456aA@', salt);
 
         const [resTK] = await connection.execute(
             'INSERT INTO TaiKhoan (TenDangNhap, MatKhau, VaiTro) VALUES (?, ?, 1)',
@@ -110,11 +119,22 @@ exports.createStudent = async (req, res) => {
         );
         const maTK = resTK.insertId;
 
-        // Thêm thông tin sinh viên
-        await connection.execute(
-            'INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, SDT, CCCD) VALUES (?, ?, ?, ?, ?, ?)',
-            [msv, maTK, fullname, email, sdt || null, cccd || null]
-        );
+        // Thêm thông tin sinh viên vào bảng SinhVien (Bổ sung cột GioiTinh, NgaySinh)
+        const querySV = `
+            INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, SDT, CCCD, GioiTinh, NgaySinh) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        await connection.execute(querySV, [
+            msv, 
+            maTK, 
+            fullname, 
+            email, 
+            sdt || null, 
+            cccd || null, 
+            gioiTinh ?? 1, // Mặc định là 1 (Nam) nếu không gửi lên
+            ngaySinh || null
+        ]);
 
         await connection.commit();
         res.status(201).json({ message: 'Thêm mới sinh viên thành công!' });
@@ -127,7 +147,7 @@ exports.createStudent = async (req, res) => {
     }
 };
 
-// 6. Cập nhật thông tin sinh viên
+// 6. Cập nhật thông tin sinh viên (Giữ nguyên hoặc tối ưu)
 exports.updateStudent = async (req, res) => {
     const { id } = req.params; // Lấy MaSV từ URL
     const { fullname, email, sdt, cccd, gioiTinh, ngaySinh } = req.body;
@@ -138,7 +158,16 @@ exports.updateStudent = async (req, res) => {
             SET HoTen = ?, Email = ?, SDT = ?, CCCD = ?, GioiTinh = ?, NgaySinh = ?
             WHERE MaSV = ?
         `;
-        await pool.execute(query, [fullname, email, sdt || null, cccd || null, gioiTinh || null, ngaySinh || null, id]);
+        // Sử dụng ?? hoặc || null để tránh ghi đè dữ liệu cũ bằng giá trị rỗng không mong muốn
+        await pool.execute(query, [
+            fullname, 
+            email, 
+            sdt || null, 
+            cccd || null, 
+            gioiTinh ?? 1, 
+            ngaySinh || null, 
+            id
+        ]);
         res.status(200).json({ message: 'Sửa thông tin sinh viên thành công!' });
     } catch (error) {
         console.error(error);

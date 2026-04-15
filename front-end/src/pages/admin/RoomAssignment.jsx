@@ -49,12 +49,22 @@ const RoomAssignment = () => {
     }
   };
 
-  // 3. Hàm từ chối đơn (Giả lập cập nhật trạng thái = 2)
   const handleReject = async (id) => {
     if (window.confirm("Xác nhận từ chối đơn đăng ký này?")) {
-      // Thực tế nên có API riêng cho Reject, ở đây update UI tạm
-      setRegistrations(registrations.filter(reg => reg.MaDK !== id));
-      alert('Đã từ chối đơn!');
+      try {
+        // Gọi API PUT /admin/registrations/:id/reject
+        const response = await axiosClient.put(`/admin/registrations/${id}/reject`);
+
+        // Thông báo từ backend trả về
+        alert(response.message || 'Đã từ chối đơn đăng ký thành công!');
+        
+        // Tải lại dữ liệu để cập nhật danh sách (mất đơn vừa từ chối)
+        fetchData(); 
+      } catch (error) {
+        console.error("Lỗi khi từ chối đơn:", error);
+        // Hiển thị lỗi cụ thể từ Backend nếu có
+        alert(error.response?.data?.message || 'Có lỗi xảy ra khi thực hiện thao tác này!');
+      }
     }
   };
 
@@ -123,7 +133,7 @@ const RoomAssignment = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-900">{reg.HoTen}</div>
-                      <div className="text-[10px] text-blue-500 font-bold uppercase">{reg.MaSV} • {reg.Lop}</div>
+                      <div className="text-[10px] text-blue-500 font-bold uppercase">{reg.MaSV} </div>
                     </td>
                     <td className="px-6 py-4 text-xs font-semibold uppercase">
                       {reg.GioiTinh === 1 ? 'Nam' : 'Nữ'}
@@ -162,28 +172,46 @@ const RoomAssignment = () => {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200">
           <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95">
             <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 text-slate-800 font-semibold">
-              <span className="uppercase text-xs tracking-widest">Phân phòng cho: {selectedReg.HoTen}</span>
+              <span className="uppercase text-xs tracking-widest">Phân phòng cho: {selectedReg.MaSV} - {selectedReg.HoTen}</span>
               <button onClick={() => setSelectedReg(null)} className="p-1.5 hover:bg-white rounded-full"><X size={18} /></button>
             </div>
 
             <div className="p-8">
-              <div className="mb-6 p-4 bg-blue-50 rounded-2xl border border-blue-100 flex justify-between items-center">
+              <div className="mb-6 p-5 bg-blue-50 rounded-2xl border border-blue-100 grid grid-cols-2 gap-x-6 gap-y-4">
                 <div>
-                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Giới tính / Lớp</p>
-                  <p className="text-lg font-bold text-blue-700 uppercase">{selectedReg.GioiTinh === 1 ? 'Nam' : 'Nữ'} - {selectedReg.Lop}</p>
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center">
+                    Giới tính
+                  </p>
+                  <p className="text-sm font-bold text-blue-800 uppercase mt-0.5">
+                    {selectedReg.GioiTinh === 1 ? 'Nam' : 'Nữ'}
+                  </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Yêu cầu học kỳ</p>
-                  <p className="text-sm font-semibold text-blue-700">{selectedReg.HocKy}</p>
+                <div>
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Học kỳ đăng ký</p>
+                  <p className="text-sm font-bold text-blue-800 mt-0.5">{selectedReg.HocKy}</p>
+                </div>
+                {/* HIỂN THỊ NGUYỆN VỌNG KHU */}
+                <div>
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center">
+                    Khu vực nguyện vọng
+                  </p>
+                  <p className="text-sm font-bold text-blue-800 mt-0.5">{selectedReg.NguyenVongKhu || 'Không yêu cầu'}</p>
+                </div>
+                {/* HIỂN THỊ NGUYỆN VỌNG LOẠI PHÒNG */}
+                <div>
+                  <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center">
+                     Loại phòng nguyện vọng
+                  </p>
+                  <p className="text-sm font-bold text-blue-800 mt-0.5">{selectedReg.NguyenVongLoaiPhong || 'Không yêu cầu'}</p>
                 </div>
               </div>
 
               <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center ">
-                <Home size={16} className="mr-2 text-slate-400" /> Danh sách phòng trống ({availableRooms.length} phòng):
+                <Home size={16} className="mr-2 text-slate-400" /> Danh sách phòng trống ({availableRooms.filter(room => room.GioiTinh === selectedReg.GioiTinh).length} phòng):
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto sidebar-scroll pr-2">
-                {availableRooms.map(room => (
+                {availableRooms.filter(room => room.GioiTinh === selectedReg.GioiTinh).map(room => (
                   <div
                     key={room.MaPhong}
                     onClick={() => handleAssign(room.MaPhong)}
@@ -212,6 +240,7 @@ const RoomAssignment = () => {
                     </div>
                   </div>
                 ))}
+                
               </div>
             </div>
 

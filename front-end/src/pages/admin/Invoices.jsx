@@ -103,9 +103,9 @@ const Invoices = () => {
           <table className="w-full text-left border-collapse font-medium text-slate-700">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                <th className="px-6 py-4">Mã HĐ</th>
+                <th className="px-6 py-4">Mã Hóa Đơn</th>
                 <th className="px-6 py-4">Kỳ Hóa Đơn</th>
-                <th className="px-6 py-4">Sinh viên thụ hưởng</th>
+                <th className="px-6 py-4">Sinh viên</th>
                 <th className="px-6 py-4">Số tiền thu</th>
                 <th className="px-6 py-4">Loại phí</th>
                 <th className="px-6 py-4">Phòng</th>

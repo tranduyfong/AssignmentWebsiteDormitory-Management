@@ -98,13 +98,17 @@ exports.deleteBuilding = async (req, res) => {
 
 // --- QUẢN LÝ PHÒNG ---
 exports.createRoom = async (req, res) => {
-    const { maToaNha, tenPhong, loaiPhong, sucChua, giaPhong } = req.body;
+    // Bổ sung trangThai vào destructuring
+    const { maToaNha, tenPhong, loaiPhong, sucChua, gioiTinh, trangThai } = req.body;
     try {
         const query = `
-            INSERT INTO Phong (MaToaNha, TenPhong, LoaiPhong, SucChua, SoSinhVienHienTai) 
-            VALUES (?, ?, ?, ?, 0)
+            INSERT INTO Phong (MaToaNha, TenPhong, LoaiPhong, GioiTinh, SucChua, TrangThai, SoSinhVienHienTai) 
+            VALUES (?, ?, ?, ?, ?, ?, 0)
         `;
-        await pool.execute(query, [maToaNha, tenPhong, loaiPhong, sucChua]);
+        // Nếu frontend không gửi trangThai, mặc định là 'Trống'
+        const status = trangThai || 'Trống';
+        
+        await pool.execute(query, [maToaNha, tenPhong, loaiPhong, gioiTinh, sucChua, status]);
         res.status(201).json({ message: 'Thêm phòng mới thành công!' });
     } catch (error) {
         console.error(error);
@@ -112,16 +116,17 @@ exports.createRoom = async (req, res) => {
     }
 };
 
+
 exports.updateRoom = async (req, res) => {
-    const { id } = req.params; // MaPhong
-    const { tenPhong, tang, loaiPhong, sucChua, trangThai, giaPhong } = req.body;
+    const { id } = req.params;
+    const { tenPhong, loaiPhong, sucChua, gioiTinh, trangThai } = req.body;
     try {
         const query = `
             UPDATE Phong 
-            SET TenPhong = ?, Tang = ?, LoaiPhong = ?, SucChua = ?, TrangThai = ?, GiaPhong = ?
+            SET TenPhong = ?, LoaiPhong = ?, GioiTinh = ?, SucChua = ?, TrangThai = ?
             WHERE MaPhong = ?
         `;
-        await pool.execute(query, [tenPhong, tang, loaiPhong, sucChua, trangThai, giaPhong, id]);
+        await pool.execute(query, [tenPhong, loaiPhong, gioiTinh, sucChua, trangThai, id]);
         res.status(200).json({ message: 'Cập nhật phòng thành công!' });
     } catch (error) {
         console.error(error);
@@ -130,13 +135,40 @@ exports.updateRoom = async (req, res) => {
 };
 
 exports.deleteRoom = async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.params; // MaPhong
+
     try {
+        const [rooms] = await pool.execute(
+            'SELECT TenPhong, SoSinhVienHienTai FROM Phong WHERE MaPhong = ?', 
+            [id]
+        );
+
+        if (rooms.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy phòng để xóa.' });
+        }
+
+        const room = rooms[0];
+
+        if (room.SoSinhVienHienTai > 0) {
+            return res.status(400).json({ 
+                message: `Không thể xóa! Phòng ${room.TenPhong} hiện đang có ${room.SoSinhVienHienTai} sinh viên đang cư trú.` 
+            });
+        }
+
         await pool.execute('DELETE FROM Phong WHERE MaPhong = ?', [id]);
-        res.status(200).json({ message: 'Đã xóa phòng.' });
+
+        res.status(200).json({ message: `Đã xóa phòng ${room.TenPhong} thành công.` });
+
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi xóa phòng (Có thể phòng đang có sinh viên hoặc hóa đơn ràng buộc).' });
+        console.error("Lỗi khi xóa phòng:", error);
+        
+        if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+            return res.status(400).json({ 
+                message: 'Không thể xóa phòng này vì vẫn còn dữ liệu lịch sử (hóa đơn, đăng ký cũ) liên quan trong hệ thống.' 
+            });
+        }
+
+        res.status(500).json({ message: 'Lỗi server khi thực hiện xóa phòng.' });
     }
 };
 
@@ -144,19 +176,36 @@ exports.deleteRoom = async (req, res) => {
 exports.getAllRooms = async (req, res) => {
     try {
         const query = `
-            SELECT 
-                p.MaPhong, p.TenPhong, p.LoaiPhong, p.SucChua, p.SoSinhVienHienTai,
-                t.TenToaNha, t.MaToaNha,
-                k.TenKhu
+            SELECT p.*, t.TenToaNha, k.TenKhu
             FROM Phong p
             JOIN ToaNha t ON p.MaToaNha = t.MaToaNha
             JOIN Khu k ON t.MaKhu = k.MaKhu
-            ORDER BY t.TenToaNha, p.TenPhong
+            ORDER BY p.TenPhong ASC
         `;
         const [rooms] = await pool.execute(query);
         res.status(200).json(rooms);
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi lấy danh sách phòng.' });
+        res.status(500).json({ message: 'Lỗi lấy danh sách phòng.' });
+    }
+};
+
+
+exports.updateRoomStatus = async (req, res) => {
+    const { id } = req.params; // MaPhong
+    const { trangThai } = req.body; // 'Bảo trì' hoặc 'Trống'
+
+    try {
+        const query = `UPDATE Phong SET TrangThai = ? WHERE MaPhong = ?`;
+        const [result] = await pool.execute(query, [trangThai, id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy phòng!' });
+        }
+
+        res.status(200).json({ message: 'Cập nhật trạng thái thành công!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật trạng thái.' });
     }
 };

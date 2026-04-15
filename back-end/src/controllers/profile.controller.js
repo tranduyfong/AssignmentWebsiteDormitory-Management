@@ -49,3 +49,25 @@ exports.updateMyProfile = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi cập nhật thông tin.' });
     }
 };
+
+
+// Lấy thông tin chi tiết cá nhân để hiển thị lên Form
+exports.getMyProfile = async (req, res) => {
+    const maSV = req.user.id;
+    try {
+        const query = `
+            SELECT s.*, p.TenPhong, t.TenToaNha, k.TenKhu
+            FROM SinhVien s
+            LEFT JOIN Phong p ON s.MaPhong = p.MaPhong
+            LEFT JOIN ToaNha t ON p.MaToaNha = t.MaToaNha
+            LEFT JOIN Khu k ON t.MaKhu = k.MaKhu
+            WHERE s.MaSV = ?
+        `;
+        const [rows] = await pool.execute(query, [maSV]);
+        if (rows.length === 0) return res.status(404).json({ message: 'Không tìm thấy hồ sơ.' });
+        
+        res.status(200).json(rows[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi lấy thông tin hồ sơ.' });
+    }
+};

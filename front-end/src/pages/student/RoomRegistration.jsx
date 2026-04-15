@@ -89,7 +89,7 @@ const RoomRegistration = () => {
                         </div>
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Mã sinh viên</label>
-                            <input type="text" disabled value={userInfo.id || ''} className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-medium outline-none cursor-not-allowed" />
+                            <input type="text" disabled value={userInfo.MaSV || ''} className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-medium outline-none cursor-not-allowed" />
                         </div>
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Học kỳ đăng ký</label>
@@ -148,7 +148,7 @@ const RoomRegistration = () => {
                 </div>
 
                 <div className="pt-4 flex justify-end">
-                    <button type="submit" className="flex items-center px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all uppercase tracking-widest text-sm">
+                    <button type="submit" className="flex items-center px-8 py-3 bg-[#00529C] text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all uppercase tracking-widest text-sm">
                         <Send size={18} className="mr-2" /> Gửi đơn đăng ký
                     </button>
                 </div>

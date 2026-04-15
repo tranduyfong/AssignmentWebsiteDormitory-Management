@@ -61,7 +61,15 @@ exports.terminateContract = async (req, res) => {
         await connection.execute('UPDATE SinhVien SET MaPhong = NULL WHERE MaSV = ?', [contract.MaSV]);
 
         // Bước 4: Giảm số lượng sinh viên hiện tại của Phòng xuống 1
-        await connection.execute('UPDATE Phong SET SoSinhVienHienTai = GREATEST(SoSinhVienHienTai - 1, 0) WHERE MaPhong = ?', [contract.MaPhong]);
+       await connection.execute(`
+            UPDATE Phong 
+            SET SoSinhVienHienTai = GREATEST(SoSinhVienHienTai - 1, 0),
+                TrangThai = CASE 
+                    WHEN GREATEST(SoSinhVienHienTai - 1, 0) = 0 THEN 'Trống'
+                    ELSE 'Còn chỗ'
+                END
+            WHERE MaPhong = ? AND TrangThai != 'Bảo trì'
+        `, [contract.MaPhong]);
 
         await connection.commit();
         res.status(200).json({ message: 'Chấm dứt hợp đồng thành công. Đã giải phóng chỗ ở của sinh viên!' });

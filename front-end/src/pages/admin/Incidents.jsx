@@ -46,7 +46,7 @@ const Incidents = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800 tracking-tight uppercase">Phản ánh & Sự cố</h1>
-          <p className="text-slate-500 font-medium text-sm">Tiếp nhận và xử lý các yêu cầu sửa chữa cơ sở vật chất</p>
+          <p className="text-slate-500 font-medium text-sm">Tiếp nhận và theo dõi tiến độ xử lý yêu cầu từ sinh viên</p>
         </div>
       </div>
 
@@ -91,7 +91,7 @@ const Incidents = () => {
                   onClick={() => handleResolve(inc.MaPhanAnh)}
                   className="w-full flex items-center justify-center py-2 bg-amber-50 text-amber-600 hover:bg-amber-500 hover:text-white rounded-xl font-bold transition-colors text-sm"
                 >
-                  <Wrench size={16} className="mr-2" /> Đánh dấu đã sửa xong
+                  <Wrench size={16} className="mr-2" /> Đánh dấu đã xử lý xong
                 </button>
               )}
             </div>

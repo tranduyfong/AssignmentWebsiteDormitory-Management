@@ -59,8 +59,9 @@ exports.login = async (req, res) => {
     try {
         // 1. Tìm người dùng trong bảng TaiKhoan
         const [users] = await pool.execute('SELECT * FROM TaiKhoan WHERE TenDangNhap = ?', [username]);
+        console.log("Kết quả truy vấn DB:", users);
         if (users.length === 0) {
-            return res.status(401).json({ message: 'Tài khoản hoặc mật khẩu không đúng.' });
+            return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không đúng.' });
         }
 
         const user = users[0];
@@ -68,7 +69,7 @@ exports.login = async (req, res) => {
         // 2. So sánh mật khẩu
         const isMatch = await bcrypt.compare(password, user.MatKhau);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Tài khoản hoặc mật khẩu không đúng.' });
+            return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không đúng.' });
         }
 
         // 3. Lấy thông tin cá nhân dựa theo VaiTro và MaTK

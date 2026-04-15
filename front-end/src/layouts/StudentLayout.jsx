@@ -1,26 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet,useNavigate } from 'react-router-dom';
 import StudentNavbar from '../components/StudentNavbar';
 import StudentSidebar from '../components/StudentSidebar';
 
 const Layout = () => {
-    const [isOpen, setIsOpen] = useState(true); // State điều khiển đóng mở
+    const [isOpen, setIsOpen] = useState(true); 
     const [currentUser, setCurrentUser] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const savedUser = localStorage.getItem('user');
-        if (savedUser) {
+        if (!savedUser) {
+            navigate('/login', { replace: true });
+        } else {
             setCurrentUser(JSON.parse(savedUser));
         }
-    }, []);
+    }, [navigate]);
+    if (!currentUser) return <div className="h-screen bg-slate-50"></div>;
 
     return (
         <div className="flex h-screen bg-slate-50 overflow-hidden">
-            {/* Sidebar nhận isOpen để co giãn */}
             <StudentSidebar isOpen={isOpen} />
 
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-                {/* Navbar nhận setIsOpen để khi bấm nút Menu nó đảo ngược giá trị isOpen */}
                 <StudentNavbar
                     isOpen={isOpen}
                     setIsOpen={setIsOpen}

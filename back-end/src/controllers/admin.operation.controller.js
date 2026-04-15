@@ -103,6 +103,44 @@ exports.getAllViolations = async (req, res) => {
     }
 };
 
+exports.updateViolationStatus = async (req, res) => {
+    const { id } = req.params; // MaViPham lấy từ URL
+    const { trangThai } = req.body; // Lấy trạng thái mới từ body (thường là 1)
+
+    try {
+        const [result] = await pool.execute(
+            'UPDATE ViPham SET TrangThai = ? WHERE MaViPham = ?',
+            [trangThai, id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy bản ghi vi phạm này.' });
+        }
+
+        res.status(200).json({ message: 'Cập nhật trạng thái vi phạm thành công!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server khi cập nhật trạng thái vi phạm.' });
+    }
+};
+
+// --- XÓA VI PHẠM ---
+exports.deleteViolation = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const [result] = await pool.execute('DELETE FROM ViPham WHERE MaViPham = ?', [id]);
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy vi phạm để xóa.' });
+        }
+        
+        res.status(200).json({ message: 'Đã xóa bản ghi vi phạm thành công!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server khi xóa vi phạm.' });
+    }
+};
+
 // --- PHẢN ÁNH ---
 exports.updateIncidentStatus = async (req, res) => {
     const { id } = req.params; // MaPhanAnh

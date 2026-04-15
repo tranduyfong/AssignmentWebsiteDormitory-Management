@@ -85,7 +85,7 @@ const StudentSidebar = ({ isOpen }) => {
                 {isOpen && (
                     <div className="flex flex-col overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300">
                         <span className="text-white font-black text-lg uppercase whitespace-nowrap tracking-tight">CỔNG SINH VIÊN</span>
-                        <span className="text-blue-100 text-[10px] font-medium opacity-80 whitespace-nowrap uppercase tracking-tighter">Đại học Mỏ - Địa chất</span>
+                        <span className="text-blue-100 text-[10px] font-medium opacity-80 whitespace-nowrap uppercase tracking-tighter">Hệ thống Quản lý KTX</span>
                     </div>
                 )}
             </div>

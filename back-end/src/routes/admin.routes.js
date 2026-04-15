@@ -42,11 +42,16 @@ router.post('/rooms', facilityController.createRoom);
 router.put('/rooms/:id', facilityController.updateRoom);
 router.delete('/rooms/:id', facilityController.deleteRoom);
 router.get('/rooms', facilityController.getAllRooms);
+router.put('/rooms/:id/status', facilityController.updateRoomStatus);
 
 // 3. Tài chính (Điện nước, Hóa đơn)
 router.post('/utilities', financeController.recordUtilities);
+router.get('/utilities', financeController.getAllUtilities);
+router.put('/utilities/:id', financeController.updateUtility);
+router.delete('/utilities/:id', financeController.deleteUtility);
 router.get('/invoices', financeController.getAllInvoices);
 router.post('/invoices', financeController.createInvoice);
+router.delete('/invoices/:id', financeController.deleteInvoice);
 
 // 4. Vận hành (Nội quy, Vi phạm, Sự cố)
 
@@ -59,6 +64,8 @@ router.delete('/rules/:id', operationController.deleteRule);
 // -- Vi phạm & Sự cố (Giữ nguyên) --
 router.get('/violations', operationController.getAllViolations);
 router.post('/violations', operationController.recordViolation);
+router.put('/violations/:id/status', operationController.updateViolationStatus); 
+router.delete('/violations/:id', operationController.deleteViolation);     
 router.put('/incidents/:id/resolve', operationController.updateIncidentStatus);
 router.get('/incidents', operationController.getAllIncidents);
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom'; // 1. Import thêm useNavigate
+import { NavLink, useNavigate } from 'react-router-dom'; 
 import {
   Building2, Users, Home, FileCheck, CreditCard,
   AlertTriangle, MessageSquare, BarChart3, LogOut,
@@ -29,8 +29,15 @@ const SidebarItem = ({ icon: Icon, label, to, collapsed,end = false }) => (
   </NavLink>
 );
 
-const Sidebar = ({ isOpen }) => {
+const AdminSidebar = ({ isOpen }) => {
   const humgBlue = "#00529C"; 
+const navigate = useNavigate();
+  const handleLogout = () => {
+        if (window.confirm("Bạn có chắc chắn muốn đăng xuất?")) {
+            localStorage.clear();
+            navigate('/login'); 
+        }
+    };
 
   return (
     <aside
@@ -50,10 +57,10 @@ const Sidebar = ({ isOpen }) => {
         {isOpen && (
           <div className="flex flex-col overflow-hidden animate-in fade-in duration-500">
             <span className="text-white font-black text-lg leading-tight uppercase tracking-tight whitespace-nowrap">
-              HUMG DORM
+              Trang ADMIN 
             </span>
             <span className="text-blue-100 text-[10px] font-medium uppercase tracking-[0.1em] opacity-80 whitespace-nowrap">
-              Hệ thống quản lý
+              Hệ thống Quản lý KTX
             </span>
           </div>
         )}
@@ -110,7 +117,7 @@ const Sidebar = ({ isOpen }) => {
 
       <div className="p-4 border-t border-slate-50 bg-slate-50/50">
         <button
-          // onClick={handleLogout}
+          onClick={handleLogout}
           className={`w-full flex items-center p-3 text-slate-600 hover:text-red-600 hover:bg-red-50 transition-all rounded-xl font-bold ${!isOpen && 'justify-center'}`}
           title={!isOpen ? "Đăng xuất" : ""}
         >
@@ -122,4 +129,4 @@ const Sidebar = ({ isOpen }) => {
   );
 };
 
-export default Sidebar;
+export default AdminSidebar;

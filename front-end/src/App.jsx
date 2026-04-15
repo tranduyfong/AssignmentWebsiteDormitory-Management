@@ -23,6 +23,7 @@ import PayInvoice from './pages/student/PayInvoice';
 import MyViolations from './pages/student/MyViolations';
 import ViewRules from './pages/student/ViewRules';
 import SubmitIncident from './pages/student/SubmitIncident';
+import Profile from './pages/student/Profile';
 import { Toaster } from 'react-hot-toast';
 
 
@@ -53,7 +54,7 @@ function App() {
 
           <Route path="/student" element={<StudentLayout />}>
             <Route index element={<Navigate to="/student/rooms" replace />} />
-
+            <Route path="profile" element={<Profile />} />
             <Route path="register-room" element={<RoomRegistration />} />
             <Route path="rooms" element={<RoomList />} />
             <Route path="contracts" element={<MyContracts />} />

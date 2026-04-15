@@ -1,5 +1,5 @@
 -- Tạo Database hỗ trợ Tiếng Việt
-CREATE DATABASE IF NOT EXISTS KTX_HUMG 
+CREATE DATABASE IF NOT EXISTS KTX_HUMG
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
@@ -41,6 +41,8 @@ CREATE TABLE Phong (
     MaToaNha INT NOT NULL,
     TenPhong VARCHAR(255) NOT NULL,
     LoaiPhong VARCHAR(100),
+    GioiTinh TINYINT(1) NOT NULL COMMENT 'Phân loại: 0 = Nữ, 1 = Nam',
+    TrangThai VARCHAR(50) DEFAULT 'Trống',
     SucChua INT(2) DEFAULT 0,
     SoSinhVienHienTai INT(2) DEFAULT 0,
     FOREIGN KEY (MaToaNha) REFERENCES ToaNha(MaToaNha) ON DELETE CASCADE
@@ -65,9 +67,12 @@ CREATE TABLE SinhVien (
 CREATE TABLE DienNuoc (
     MaDienNuoc INT AUTO_INCREMENT PRIMARY KEY,
     MaPhong INT NOT NULL,
-    ChiSoDien INT(10) DEFAULT 0,
-    ChiSoNuoc INT(10) DEFAULT 0,
-    ThoiGian DATE,
+    ChiSoDienCu INT(10) DEFAULT 0,
+    ChiSoDienMoi INT(10) DEFAULT 0,
+    ChiSoNuocCu INT(10) DEFAULT 0,
+    ChiSoNuocMoi INT(10) DEFAULT 0,
+    ThoiGian DATE, -- Ngày ghi nhận chỉ số
+    TrangThaiChot TINYINT(1) DEFAULT 0 COMMENT '0: Chưa tạo hóa đơn, 1: Đã tạo hóa đơn',
     FOREIGN KEY (MaPhong) REFERENCES Phong(MaPhong) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
@@ -77,9 +82,11 @@ CREATE TABLE HoaDon (
     MaPhong INT NOT NULL,
     MaSV VARCHAR(12) NOT NULL,
     MaDienNuoc INT,
-    ThoiGian DATE,
+    LoaiHoaDon VARCHAR(100) NOT NULL,
+    KyHoaDon VARCHAR(100) NOT NULL,
     SoTien DECIMAL(19, 5) NOT NULL,
     TrangThaiThanhToan TINYINT(1) DEFAULT 0 COMMENT '0: Chưa thanh toán, 1: Đã thanh toán',
+    NgayLap DATE NOT NULL,
     FOREIGN KEY (MaPhong) REFERENCES Phong(MaPhong) ON DELETE CASCADE,
     FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV) ON DELETE CASCADE,
     FOREIGN KEY (MaDienNuoc) REFERENCES DienNuoc(MaDienNuoc) ON DELETE SET NULL
@@ -89,6 +96,7 @@ CREATE TABLE HoaDon (
 CREATE TABLE PhanAnh (
     MaPhanAnh INT AUTO_INCREMENT PRIMARY KEY,
     MaSV VARCHAR(12) NOT NULL,
+    DanhMuc VARCHAR(100) NOT NULL,
     TieuDe VARCHAR(255) NOT NULL,
     NoiDung VARCHAR(1024) NOT NULL,
     NgayGui DATE,
@@ -101,6 +109,10 @@ CREATE TABLE DangKy (
     MaDK INT AUTO_INCREMENT PRIMARY KEY,
     MaSV VARCHAR(12) NOT NULL,
     MaPhong INT,
+    HocKy VARCHAR(100),
+    NguyenVongKhu VARCHAR(100),
+    NguyenVongLoaiPhong VARCHAR(100),
+    GhiChu VARCHAR(1024),
     NgayDangKy DATE NOT NULL,
     TrangThai TINYINT(1) DEFAULT 0 COMMENT '0: Chờ duyệt, 1: Đã duyệt, 2: Từ chối',
     FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV) ON DELETE CASCADE,
@@ -125,12 +137,22 @@ CREATE TABLE ViPham (
     MaViPham INT AUTO_INCREMENT PRIMARY KEY,
     MaSV VARCHAR(12) NOT NULL,
     NgayViPham DATE NOT NULL,
+    LoaiViPham VARCHAR(255) NOT NULL,
     NoiDung VARCHAR(1024) NOT NULL,
+    HinhThucXuLy VARCHAR(255) NOT NULL,
     TrangThai TINYINT(1) DEFAULT 0 COMMENT '0: Chờ xử lý, 1: Đã xử lý',
     FOREIGN KEY (MaSV) REFERENCES SinhVien(MaSV) ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
-USE KTX_HUMG;
+CREATE TABLE NoiQuy (
+    MaNoiQuy INT AUTO_INCREMENT PRIMARY KEY,
+    TieuDe VARCHAR(255) NOT NULL,
+    DanhMuc VARCHAR(100) NOT NULL,
+    NoiDung TEXT NOT NULL,
+    NgayCapNhat DATE NOT NULL,
+    TrangThai TINYINT(1) DEFAULT 1 COMMENT '1: Đang áp dụng, 0: Đã hủy bỏ'
+) ENGINE=InnoDB;
+
 
 -- 1. Đổi vai trò thành Admin (0) trong bảng TaiKhoan
 UPDATE TaiKhoan 
@@ -148,20 +170,10 @@ DELETE FROM SinhVien
 WHERE MaSV = 'admin';
 
 
-USE KTX_HUMG;
+-- Tài khoản admin mật khẩu : 12345678
+INSERT INTO TaiKhoan (TenDangNhap, MatKhau, VaiTro) 
+VALUES ('admin', '$2b$10$jA1ylkciUmJIqdbhiuYUO.lYePWB6ZVD6l9oBCfoQw/95C7IiRO2i', 0);
 
-ALTER TABLE DangKy 
-ADD COLUMN HocKy VARCHAR(100) AFTER MaPhong,
-ADD COLUMN NguyenVongKhu VARCHAR(100) AFTER HocKy,
-ADD COLUMN NguyenVongLoaiPhong VARCHAR(100) AFTER NguyenVongKhu,
-ADD COLUMN GhiChu VARCHAR(1024) AFTER NguyenVongLoaiPhong;
-
-
-CREATE TABLE NoiQuy (
-    MaNoiQuy INT AUTO_INCREMENT PRIMARY KEY,
-    TieuDe VARCHAR(255) NOT NULL,
-    DanhMuc VARCHAR(100) NOT NULL,
-    NoiDung TEXT NOT NULL,
-    NgayCapNhat DATE NOT NULL,
-    TrangThai TINYINT(1) DEFAULT 1 COMMENT '1: Đang áp dụng, 0: Đã hủy bỏ'
-) ENGINE=InnoDB;
+-- 2. Lấy MaTK vừa tạo để thêm vào bảng Admin (Hồ sơ hiển thị)
+INSERT INTO Admin (MaTK, HoTen) 
+VALUES (LAST_INSERT_ID(), 'Ban Quản lý');

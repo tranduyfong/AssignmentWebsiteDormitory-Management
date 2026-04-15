@@ -1,5 +1,30 @@
 const pool = require('../configs/db.config');
 
+
+exports.getRoomList = async (req, res) => {
+    try {
+        const query = `
+            SELECT 
+                p.*, 
+                t.TenToaNha, 
+                k.TenKhu,
+                (SELECT GROUP_CONCAT(HoTen SEPARATOR ', ') 
+                 FROM SinhVien 
+                 WHERE MaPhong = p.MaPhong) as DanhSachSV
+            FROM Phong p
+            JOIN ToaNha t ON p.MaToaNha = t.MaToaNha
+            JOIN Khu k ON t.MaKhu = k.MaKhu
+            WHERE p.TrangThai != 'Bảo trì'
+            ORDER BY k.TenKhu ASC, t.TenToaNha ASC, p.TenPhong ASC
+        `;
+        const [rooms] = await pool.execute(query);
+        res.status(200).json(rooms);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi khi lấy danh sách phòng.' });
+    }
+};
+
 // 1. Lấy danh sách hợp đồng của sinh viên
 exports.getMyContracts = async (req, res) => {
     try {
@@ -10,7 +35,7 @@ exports.getMyContracts = async (req, res) => {
             SELECT h.*, p.TenPhong 
             FROM HopDong h
             JOIN Phong p ON h.MaPhong = p.MaPhong
-            WHERE h.MaSV = ?
+            WHERE h.MaSV = ? AND h.TrangThai = 1
         `;
         const [contracts] = await pool.execute(query, [maSV]);
         res.status(200).json(contracts);
@@ -61,6 +86,24 @@ exports.getMyInvoices = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi lấy dữ liệu hóa đơn.' });
     }
 };
+exports.getUnpaidInvoices = async (req, res) => {
+    try {
+        const maSV = req.user.id; // Lấy từ Token
+        const query = `
+            SELECT hd.*, d.ChiSoDienCu, d.ChiSoDienMoi, d.ChiSoNuocCu, d.ChiSoNuocMoi 
+            FROM HoaDon hd
+            LEFT JOIN DienNuoc d ON hd.MaDienNuoc = d.MaDienNuoc
+            WHERE hd.MaSV = ? AND hd.TrangThaiThanhToan = 0
+            ORDER BY hd.NgayLap DESC
+        `;
+        
+        const [unpaidInvoices] = await pool.execute(query, [maSV]);
+        res.status(200).json(unpaidInvoices);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi khi lấy dữ liệu hóa đơn chưa thanh toán.' });
+    }
+};
 
 // 4. Gửi báo cáo sự cố (Phản ánh)
 exports.submitIncident = async (req, res) => {
@@ -89,5 +132,22 @@ exports.getMyViolations = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi khi lấy dữ liệu vi phạm.' });
+    }
+};
+
+exports.getRules = async (req, res) => {
+    try {
+        // Chỉ lấy những nội quy đang áp dụng (TrangThai = 1)
+        const query = `
+            SELECT MaNoiQuy, TieuDe, DanhMuc, NoiDung, NgayCapNhat 
+            FROM NoiQuy 
+            WHERE TrangThai = 1 
+            ORDER BY NgayCapNhat DESC
+        `;
+        const [rules] = await pool.execute(query);
+        res.status(200).json(rules);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi khi lấy danh sách nội quy.' });
     }
 };
