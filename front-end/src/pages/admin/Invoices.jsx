@@ -1,5 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Search, CreditCard, CheckCircle2, Clock, Home, Zap, Receipt, Calendar } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Search, CreditCard, CheckCircle2, Clock, Home, Zap, 
+  Receipt, Calendar, ChevronLeft, ChevronRight 
+} from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 
 const Invoices = () => {
@@ -7,18 +10,20 @@ const Invoices = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('Tất cả');
+  const [filterType, setFilterType] = useState('Tất cả');
 
-  // Thống kê tổng quan
+  // --- 1. State cho Phân trang ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Số lượng hóa đơn mỗi trang
+
   const [stats, setStats] = useState({ total: 0, paid: 0, unpaid: 0 });
 
-  // Hàm gọi API lấy danh sách hóa đơn
   const fetchInvoices = async () => {
     try {
       setIsLoading(true);
       const data = await axiosClient.get('/admin/invoices');
       setInvoices(data);
 
-      // Tính toán thống kê
       let total = 0, paid = 0, unpaid = 0;
       data.forEach(inv => {
         const amount = Number(inv.SoTien);
@@ -27,7 +32,6 @@ const Invoices = () => {
         else unpaid += amount;
       });
       setStats({ total, paid, unpaid });
-
     } catch (error) {
       console.error("Lỗi lấy danh sách hóa đơn:", error);
     } finally {
@@ -39,23 +43,38 @@ const Invoices = () => {
     fetchInvoices();
   }, []);
 
-  // Format tiền tệ VNĐ
+  // --- 2. Reset về trang 1 khi thay đổi bộ lọc ---
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus, filterType]);
+
+  const uniqueTypes = useMemo(() => {
+    const types = invoices.map(inv => inv.LoaiHoaDon).filter(Boolean);
+    return ['Tất cả', ...new Set(types)];
+  }, [invoices]);
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
-  // Lọc dữ liệu
+  // Logic Lọc dữ liệu
   const filteredInvoices = invoices.filter(inv => {
     const matchesSearch = inv.TenSinhVien?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inv.MaSV?.includes(searchQuery) ||
       inv.MaHoaDon?.toString().includes(searchQuery);
 
-    // TrangThaiThanhToan: 1 = Đã đóng, 0 = Chưa đóng
     const statusText = inv.TrangThaiThanhToan === 1 ? 'Đã đóng' : 'Chưa đóng';
     const matchesStatus = filterStatus === 'Tất cả' || statusText === filterStatus;
+    const matchesType = filterType === 'Tất cả' || inv.LoaiHoaDon === filterType;
 
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesType;
   });
+
+  // --- 3. Tính toán dữ liệu phân trang ---
+  const totalPages = Math.ceil(filteredInvoices.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredInvoices.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10 font-sans">
@@ -86,15 +105,27 @@ const Invoices = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <select
-          className="w-full md:w-48 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-medium text-slate-600"
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-        >
-          <option value="Tất cả">Tất cả trạng thái</option>
-          <option value="Đã đóng">Đã đóng</option>
-          <option value="Chưa đóng">Chưa đóng</option>
-        </select>
+        <div className="flex flex-col md:flex-row gap-4 w-full lg:w-auto">
+          <select
+            className="w-full md:w-48 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-medium text-slate-600 cursor-pointer"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+          >
+            {uniqueTypes.map(type => (
+              <option key={type} value={type}>{type === 'Tất cả' ? 'Tất cả loại phí' : type}</option>
+            ))}
+          </select>
+
+          <select
+            className="w-full md:w-48 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-medium text-slate-600 cursor-pointer"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="Tất cả">Tất cả trạng thái</option>
+            <option value="Đã đóng">Đã đóng</option>
+            <option value="Chưa đóng">Chưa đóng</option>
+          </select>
+        </div>
       </div>
 
       {/* Bảng dữ liệu */}
@@ -116,10 +147,10 @@ const Invoices = () => {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr><td colSpan="8" className="text-center py-10 text-slate-400">Đang tải dữ liệu hóa đơn...</td></tr>
-              ) : filteredInvoices.length === 0 ? (
+              ) : currentItems.length === 0 ? (
                 <tr><td colSpan="8" className="text-center py-10 text-slate-400">Không tìm thấy dữ liệu hóa đơn nào...</td></tr>
               ) : (
-                filteredInvoices.map((inv) => (
+                currentItems.map((inv) => (
                   <tr key={inv.MaHoaDon} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-bold text-slate-900">HD{inv.MaHoaDon}</td>
                     <td className="px-6 py-4 font-semibold text-blue-600">{inv.KyHoaDon}</td>
@@ -163,11 +194,52 @@ const Invoices = () => {
             </tbody>
           </table>
         </div>
+
+        {/* --- 4. Giao diện Phân trang --- */}
+        {!isLoading && filteredInvoices.length > 0 && (
+          <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-semibold">
+              Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredInvoices.length)} trên tổng {filteredInvoices.length} hóa đơn
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <ChevronLeft size={18} className="text-slate-600" />
+              </button>
+              
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                    currentPage === i + 1 
+                    ? "bg-[#00529C] text-white shadow-md shadow-blue-100" 
+                    : "text-slate-600 hover:bg-white hover:shadow-sm"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <ChevronRight size={18} className="text-slate-600" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
+// Sub-components giữ nguyên...
 const FinanceCard = ({ label, value, icon: Icon, color, bg }) => (
   <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
     <div className={`p-3 rounded-xl ${bg} ${color}`}><Icon size={22} /></div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, Search, Edit, Trash2, Home, Users,
   CheckCircle2, Hammer, Building2,
-  User, X, LayoutGrid, Loader2, AlertTriangle
+  User, X, LayoutGrid, Loader2, AlertTriangle,Filter
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -15,6 +15,7 @@ const Rooms = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterArea, setFilterArea] = useState('Tất cả');
   const [filterBuilding, setFilterBuilding] = useState('Tất cả');
 
   const [formData, setFormData] = useState({
@@ -140,11 +141,17 @@ const Rooms = () => {
     }
   };
 
-  const filteredRooms = rooms.filter(r => {
+ const filteredRooms = rooms.filter(r => {
     const matchesSearch = r.TenPhong?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesArea = filterArea === 'Tất cả' || r.TenKhu === filterArea;
     const matchesBuilding = filterBuilding === 'Tất cả' || r.TenToaNha === filterBuilding;
-    return matchesSearch && matchesBuilding;
+    return matchesSearch && matchesArea && matchesBuilding;
   });
+    const uniqueAreas = [...new Set(rooms.map(r => r.TenKhu))].filter(Boolean);
+
+    const availableBuildingsForFilter = filterArea === 'Tất cả' 
+    ? buildings 
+    : buildings.filter(b => b.TenKhu === filterArea);
 
   const isRoomOccupied = editingRoom && editingRoom.SoSinhVienHienTai > 0;
 
@@ -181,14 +188,31 @@ const Rooms = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-2 w-full md:w-auto font-semibold text-slate-600">
+        
+        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto font-semibold text-slate-600">
+          <div className="flex items-center gap-2">
+            <Filter size={14} className="text-slate-400 hidden sm:block" />
+            <select
+              className="w-full sm:w-40 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs focus:border-blue-500"
+              value={filterArea}
+              onChange={(e) => {
+                setFilterArea(e.target.value);
+                setFilterBuilding('Tất cả'); // Reset tòa nhà khi đổi khu
+              }}
+            >
+              <option value="Tất cả">Tất cả Khu</option>
+              {uniqueAreas.map(area => (
+                <option key={area} value={area}>{area}</option>
+              ))}
+            </select>
+          </div>
           <select
-            className="flex-1 md:w-44 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm"
+            className="w-full sm:w-40 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-xs focus:border-blue-500"
             value={filterBuilding}
             onChange={(e) => setFilterBuilding(e.target.value)}
           >
             <option value="Tất cả">Tất cả Tòa nhà</option>
-            {buildings.map(b => (
+            {availableBuildingsForFilter.map(b => (
               <option key={b.MaToaNha} value={b.TenToaNha}>{b.TenToaNha}</option>
             ))}
           </select>

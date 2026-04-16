@@ -119,14 +119,14 @@ exports.createRoom = async (req, res) => {
 
 exports.updateRoom = async (req, res) => {
     const { id } = req.params;
-    const { tenPhong, loaiPhong, sucChua, gioiTinh, trangThai } = req.body;
+    const { maToaNha,tenPhong, loaiPhong, sucChua, gioiTinh, trangThai } = req.body;
     try {
         const query = `
             UPDATE Phong 
-            SET TenPhong = ?, LoaiPhong = ?, GioiTinh = ?, SucChua = ?, TrangThai = ?
+            SET maToaNha = ?, TenPhong = ?, LoaiPhong = ?, GioiTinh = ?, SucChua = ?, TrangThai = ?
             WHERE MaPhong = ?
         `;
-        await pool.execute(query, [tenPhong, loaiPhong, gioiTinh, sucChua, trangThai, id]);
+        await pool.execute(query, [maToaNha,tenPhong, loaiPhong, gioiTinh, sucChua, trangThai, id]);
         res.status(200).json({ message: 'Cập nhật phòng thành công!' });
     } catch (error) {
         console.error(error);
