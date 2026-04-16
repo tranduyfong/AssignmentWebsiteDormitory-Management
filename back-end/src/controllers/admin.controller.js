@@ -55,7 +55,7 @@ exports.approveRegistration = async (req, res) => {
         await connection.execute('UPDATE SinhVien SET MaPhong = ? WHERE MaSV = ?', [maPhong, maSV]);
 
         // Bước 4: Tăng số lượng sinh viên trong phòng lên 1
-         await connection.execute(`
+        await connection.execute(`
             UPDATE Phong 
             SET SoSinhVienHienTai = SoSinhVienHienTai + 1,
                 TrangThai = CASE 
@@ -124,14 +124,14 @@ exports.createStudent = async (req, res) => {
             INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, SDT, CCCD, GioiTinh, NgaySinh) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         `;
-        
+
         await connection.execute(querySV, [
-            msv, 
-            maTK, 
-            fullname, 
-            email, 
-            sdt || null, 
-            cccd || null, 
+            msv,
+            maTK,
+            fullname,
+            email,
+            sdt || null,
+            cccd || null,
             gioiTinh ?? 1, // Mặc định là 1 (Nam) nếu không gửi lên
             ngaySinh || null
         ]);
@@ -160,12 +160,12 @@ exports.updateStudent = async (req, res) => {
         `;
         // Sử dụng ?? hoặc || null để tránh ghi đè dữ liệu cũ bằng giá trị rỗng không mong muốn
         await pool.execute(query, [
-            fullname, 
-            email, 
-            sdt || null, 
-            cccd || null, 
-            gioiTinh ?? 1, 
-            ngaySinh || null, 
+            fullname,
+            email,
+            sdt || null,
+            cccd || null,
+            gioiTinh ?? 1,
+            ngaySinh || null,
             id
         ]);
         res.status(200).json({ message: 'Sửa thông tin sinh viên thành công!' });

@@ -14,13 +14,18 @@ const RoomAssignment = () => {
   const fetchData = async () => {
     try {
       setIsLoading(true);
-      // Lấy đơn chờ duyệt
       const regs = await axiosClient.get('/admin/registrations');
       setRegistrations(regs);
 
-      // Lấy danh sách toàn bộ phòng (sau đó ta sẽ tự filter phòng còn trống)
       const rooms = await axiosClient.get('/admin/rooms');
-      setAvailableRooms(rooms.filter(r => r.SoSinhVienHienTai < r.SucChua && r.TrangThai !== 'Bảo trì'));
+
+      // FIX 1: Ép kiểu số nguyên (parseInt) để đảm bảo phép tính "Bé hơn" hoạt động chuẩn xác
+      setAvailableRooms(rooms.filter(r => {
+        const hienTai = parseInt(r.SoSinhVienHienTai || 0);
+        const sucChua = parseInt(r.SucChua || 0);
+        return hienTai < sucChua && r.TrangThai !== 'Bảo trì';
+      }));
+
     } catch (error) {
       console.error("Lỗi lấy dữ liệu:", error);
     } finally {
@@ -57,9 +62,9 @@ const RoomAssignment = () => {
 
         // Thông báo từ backend trả về
         alert(response.message || 'Đã từ chối đơn đăng ký thành công!');
-        
+
         // Tải lại dữ liệu để cập nhật danh sách (mất đơn vừa từ chối)
-        fetchData(); 
+        fetchData();
       } catch (error) {
         console.error("Lỗi khi từ chối đơn:", error);
         // Hiển thị lỗi cụ thể từ Backend nếu có
@@ -200,18 +205,21 @@ const RoomAssignment = () => {
                 {/* HIỂN THỊ NGUYỆN VỌNG LOẠI PHÒNG */}
                 <div>
                   <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center">
-                     Loại phòng nguyện vọng
+                    Loại phòng nguyện vọng
                   </p>
                   <p className="text-sm font-bold text-blue-800 mt-0.5">{selectedReg.NguyenVongLoaiPhong || 'Không yêu cầu'}</p>
                 </div>
               </div>
 
+              {/* Đếm số phòng */}
               <h4 className="text-sm font-bold text-slate-700 mb-4 flex items-center ">
-                <Home size={16} className="mr-2 text-slate-400" /> Danh sách phòng trống ({availableRooms.filter(room => room.GioiTinh === selectedReg.GioiTinh).length} phòng):
+                <Home size={16} className="mr-2 text-slate-400" /> Danh sách phòng trống ({
+                  availableRooms.filter(room => parseInt(room.GioiTinh) === parseInt(selectedReg.GioiTinh)).length
+                } phòng):
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] overflow-y-auto sidebar-scroll pr-2">
-                {availableRooms.filter(room => room.GioiTinh === selectedReg.GioiTinh).map(room => (
+                {availableRooms.filter(room => parseInt(room.GioiTinh) === parseInt(selectedReg.GioiTinh)).map(room => (
                   <div
                     key={room.MaPhong}
                     onClick={() => handleAssign(room.MaPhong)}
@@ -240,7 +248,7 @@ const RoomAssignment = () => {
                     </div>
                   </div>
                 ))}
-                
+
               </div>
             </div>
 

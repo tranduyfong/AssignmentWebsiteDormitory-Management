@@ -2,10 +2,9 @@ const pool = require('../configs/db.config');
 
 exports.getAllRooms = async (req, res) => {
     try {
-        // Câu truy vấn kết hợp các bảng để lấy thông tin chi tiết
         const query = `
             SELECT 
-                p.MaPhong, p.TenPhong, p.Tang, p.LoaiPhong, p.SucChua, p.SoSinhVienHienTai, p.TrangThai, p.GiaPhong,
+                p.MaPhong, p.TenPhong, p.Tang, p.LoaiPhong, p.SucChua, p.SoSinhVienHienTai, p.TrangThai, p.GiaPhong, p.GioiTinh,
                 t.TenToaNha,
                 k.TenKhu
             FROM Phong p
@@ -14,7 +13,6 @@ exports.getAllRooms = async (req, res) => {
         `;
 
         const [rooms] = await pool.execute(query);
-
         res.status(200).json(rooms);
     } catch (error) {
         console.error(error);

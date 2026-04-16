@@ -36,12 +36,14 @@ exports.changePassword = async (req, res) => {
 // 2. Cập nhật thông tin cá nhân (Dành cho Sinh viên)
 exports.updateMyProfile = async (req, res) => {
     const maSV = req.user.id;
-    const { sdt, cccd, email } = req.body;
+    // Bổ sung gioiTinh vào destructuring
+    const { sdt, cccd, email, gioiTinh } = req.body;
 
     try {
         await pool.execute(
-            'UPDATE SinhVien SET SDT = ?, CCCD = ?, Email = ? WHERE MaSV = ?',
-            [sdt, cccd, email, maSV]
+            // Bổ sung cập nhật cột GioiTinh
+            'UPDATE SinhVien SET SDT = ?, CCCD = ?, Email = ?, GioiTinh = ? WHERE MaSV = ?',
+            [sdt, cccd, email, gioiTinh, maSV]
         );
         res.status(200).json({ message: 'Cập nhật thông tin cá nhân thành công.' });
     } catch (error) {
@@ -65,7 +67,7 @@ exports.getMyProfile = async (req, res) => {
         `;
         const [rows] = await pool.execute(query, [maSV]);
         if (rows.length === 0) return res.status(404).json({ message: 'Không tìm thấy hồ sơ.' });
-        
+
         res.status(200).json(rows[0]);
     } catch (error) {
         res.status(500).json({ message: 'Lỗi lấy thông tin hồ sơ.' });

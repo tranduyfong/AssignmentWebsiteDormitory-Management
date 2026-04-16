@@ -6,8 +6,14 @@ const studentController = require('../controllers/student.controller');
 const { verifyToken, isStudent } = require('../middlewares/auth.middleware');
 const profileController = require('../controllers/profile.controller');
 
+// Đặt route nhận phản hồi từ VNPay ở đây
+router.get('/vnpay-return', studentController.vnpayReturn);
+
 // Áp dụng middleware: Yêu cầu phải có Token hợp lệ VÀ phải là Sinh viên
 router.use(verifyToken, isStudent);
+
+// Thêm API tạo link thanh toán (Cần bảo mật)
+router.post('/create-payment-url', studentController.createPaymentUrl);
 
 // Các API bên dưới tự động được bảo vệ
 router.get('/rooms', studentController.getRoomList);

@@ -28,6 +28,27 @@ const PayInvoice = () => {
         fetchUnpaidInvoices();
     }, []);
 
+    useEffect(() => {
+        // Lấy tham số trên URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('paymentStatus');
+
+        if (status === 'success') {
+            toast.success('Thanh toán thành công! Hóa đơn đã được gạch nợ.', { duration: 5000 });
+        } else if (status === 'failed') {
+            toast.error('Thanh toán thất bại hoặc đã bị hủy.');
+        } else if (status === 'invalid') {
+            toast.error('Giao dịch không hợp lệ (Sai chữ ký bảo mật).');
+        } else if (status === 'error') {
+            toast.error('Thanh toán thành công nhưng có lỗi cập nhật hệ thống.');
+        }
+
+        // Xóa tham số khỏi URL cho đẹp mắt
+        if (status) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }, []);
+
     const totalAmount = unpaidInvoices
         .filter(inv => selectedIds.includes(inv.MaHoaDon))
         .reduce((sum, inv) => sum + Number(inv.SoTien), 0);
@@ -48,15 +69,34 @@ const PayInvoice = () => {
         }
     };
 
-    const handlePayment = (e) => {
+    const handlePayment = async (e) => {
         e.preventDefault();
         if (selectedIds.length === 0) {
             return toast.error("Vui lòng chọn ít nhất một hóa đơn để thanh toán");
         }
+
         if (paymentMethod === 'cash') {
             setShowCashModal(true);
         } else {
-            alert(`Đang chuyển hướng thanh toán trực tuyến cho ${selectedIds.length} hóa đơn...`);
+            // XỬ LÝ THANH TOÁN VNPAY
+            try {
+                const toastId = toast.loading('Đang khởi tạo cổng thanh toán...');
+
+                const response = await axiosClient.post('/student/create-payment-url', {
+                    amount: totalAmount,
+                    invoiceIds: selectedIds // Gửi mảng ID [1, 2] lên Backend
+                });
+
+                toast.dismiss(toastId);
+
+                if (response.paymentUrl) {
+                    // Chuyển hướng trình duyệt sang trang VNPay
+                    window.location.href = response.paymentUrl;
+                }
+            } catch (error) {
+                console.error(error);
+                toast.error("Lỗi khởi tạo thanh toán trực tuyến.");
+            }
         }
     };
 
@@ -82,7 +122,7 @@ const PayInvoice = () => {
                     <div className="flex justify-between items-center px-1">
                         <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Chọn Hóa đơn cần thanh toán</h3>
                         {unpaidInvoices.length > 0 && (
-                            <button 
+                            <button
                                 onClick={toggleSelectAll}
                                 className="text-[10px] font-bold text-[#00529C] hover:underline uppercase tracking-widest"
                             >
@@ -90,27 +130,27 @@ const PayInvoice = () => {
                             </button>
                         )}
                     </div>
-                    
+
                     <div className="space-y-3">
                         {unpaidInvoices.length > 0 ? (
                             unpaidInvoices.map((inv) => {
                                 const isSelected = selectedIds.includes(inv.MaHoaDon);
                                 return (
-                                    <div 
-                                        key={inv.MaHoaDon} 
+                                    <div
+                                        key={inv.MaHoaDon}
                                         onClick={() => toggleSelect(inv.MaHoaDon)}
                                         className={`bg-white p-5 rounded-2xl border transition-all cursor-pointer relative overflow-hidden ${isSelected ? 'border-[#00529C] shadow-md ring-1 ring-[#00529C]' : 'border-slate-100 shadow-sm'}`}
                                     >
                                         {/* Vạch màu bên trái mờ khi chưa chọn */}
                                         <div className={`absolute top-0 left-0 w-1.5 h-full transition-all ${isSelected ? 'bg-[#00529C]' : 'bg-slate-200 opacity-40'}`}></div>
-                                        
+
                                         <div className="flex justify-between items-center pl-2">
                                             <div className="flex items-center gap-3">
                                                 {/* Checkbox: Mờ khi chưa chọn (opacity-30) */}
                                                 <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all ${isSelected ? 'bg-[#00529C] border-[#00529C] opacity-100' : 'border-slate-300 bg-white opacity-30'}`}>
                                                     {isSelected && <Check size={14} className="text-white" strokeWidth={4} />}
                                                 </div>
-                                                
+
                                                 {/* Chữ: Luôn rõ nét */}
                                                 <div>
                                                     <h4 className="font-bold text-sm uppercase tracking-tight text-slate-800">{inv.LoaiHoaDon}</h4>
@@ -119,7 +159,7 @@ const PayInvoice = () => {
                                                     </p>
                                                 </div>
                                             </div>
-                                            
+
                                             {/* Số tiền: Luôn rõ nét */}
                                             <span className={'font-black text-lg text-red-600'}>
                                                 {Number(inv.SoTien).toLocaleString('vi-VN')}đ
@@ -148,7 +188,7 @@ const PayInvoice = () => {
                         </div>
                         <div className="text-right">
                             <h2 className="text-2xl font-black text-[#00529C] tracking-tighter">
-                                {totalAmount.toLocaleString('vi-VN')} 
+                                {totalAmount.toLocaleString('vi-VN')}
                                 <span className="text-sm ml-1 font-bold">đ</span>
                             </h2>
                         </div>
@@ -186,8 +226,8 @@ const PayInvoice = () => {
                             </label>
                         </div>
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             disabled={selectedIds.length === 0}
                             className={`w-full flex items-center justify-center py-4 rounded-2xl font-bold shadow-lg transition-all active:scale-95 uppercase text-[11px] tracking-widest ${selectedIds.length === 0 ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' : 'bg-[#00529C] text-white hover:bg-blue-800 shadow-blue-500/20'}`}
                         >

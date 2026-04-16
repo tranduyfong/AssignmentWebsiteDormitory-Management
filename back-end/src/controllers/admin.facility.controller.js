@@ -107,7 +107,7 @@ exports.createRoom = async (req, res) => {
         `;
         // Nếu frontend không gửi trangThai, mặc định là 'Trống'
         const status = trangThai || 'Trống';
-        
+
         await pool.execute(query, [maToaNha, tenPhong, loaiPhong, gioiTinh, sucChua, status]);
         res.status(201).json({ message: 'Thêm phòng mới thành công!' });
     } catch (error) {
@@ -139,7 +139,7 @@ exports.deleteRoom = async (req, res) => {
 
     try {
         const [rooms] = await pool.execute(
-            'SELECT TenPhong, SoSinhVienHienTai FROM Phong WHERE MaPhong = ?', 
+            'SELECT TenPhong, SoSinhVienHienTai FROM Phong WHERE MaPhong = ?',
             [id]
         );
 
@@ -150,8 +150,8 @@ exports.deleteRoom = async (req, res) => {
         const room = rooms[0];
 
         if (room.SoSinhVienHienTai > 0) {
-            return res.status(400).json({ 
-                message: `Không thể xóa! Phòng ${room.TenPhong} hiện đang có ${room.SoSinhVienHienTai} sinh viên đang cư trú.` 
+            return res.status(400).json({
+                message: `Không thể xóa! Phòng ${room.TenPhong} hiện đang có ${room.SoSinhVienHienTai} sinh viên đang cư trú.`
             });
         }
 
@@ -161,10 +161,10 @@ exports.deleteRoom = async (req, res) => {
 
     } catch (error) {
         console.error("Lỗi khi xóa phòng:", error);
-        
+
         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-            return res.status(400).json({ 
-                message: 'Không thể xóa phòng này vì vẫn còn dữ liệu lịch sử (hóa đơn, đăng ký cũ) liên quan trong hệ thống.' 
+            return res.status(400).json({
+                message: 'Không thể xóa phòng này vì vẫn còn dữ liệu lịch sử (hóa đơn, đăng ký cũ) liên quan trong hệ thống.'
             });
         }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  User, Mail, Phone, ShieldCheck, Lock, Eye, EyeOff, 
-  Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2 
+import {
+    User, Mail, Phone, ShieldCheck, Lock, Eye, EyeOff,
+    Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -11,16 +11,17 @@ const Profile = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [isUpdating, setIsUpdating] = useState(false); // Trạng thái khi đang gọi API lưu
     const [isEditing, setIsEditing] = useState(false); // Trạng thái bật/tắt form sửa
-    
+
     // State cho đổi mật khẩu
     const [showPass, setShowPass] = useState({ old: false, new: false });
     const [passData, setPassData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
 
-    // State cho cập nhật thông tin (Email, SĐT, CCCD)
+    // State cho cập nhật thông tin (Email, SĐT, CCCD, GioiTinh)
     const [editFormData, setEditFormData] = useState({
         email: '',
         sdt: '',
-        cccd: ''
+        cccd: '',
+        gioiTinh: 1 // Thêm state này, mặc định là 1 (Nam)
     });
 
     const fetchProfile = async () => {
@@ -32,7 +33,8 @@ const Profile = () => {
             setEditFormData({
                 email: data.Email || '',
                 sdt: data.SDT || '',
-                cccd: data.CCCD || ''
+                cccd: data.CCCD || '',
+                gioiTinh: data.GioiTinh !== undefined ? data.GioiTinh : 1 // Lấy giới tính từ DB
             });
         } catch (error) {
             toast.error("Không thể tải thông tin cá nhân");
@@ -91,14 +93,14 @@ const Profile = () => {
                     <p className="text-slate-500 font-medium text-sm italic">Quản lý thông tin hồ sơ và bảo mật tài khoản</p>
                 </div>
                 {!isEditing ? (
-                    <button 
+                    <button
                         onClick={() => setIsEditing(true)}
                         className="flex items-center px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-[#00529C] hover:bg-blue-50 transition-all shadow-sm"
                     >
                         <Edit2 size={14} className="mr-2" /> Chỉnh sửa hồ sơ
                     </button>
                 ) : (
-                    <button 
+                    <button
                         onClick={() => setIsEditing(false)}
                         className="flex items-center px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-200 transition-all"
                     >
@@ -125,37 +127,37 @@ const Profile = () => {
                         </div>
                         <form onSubmit={handleChangePassword} className="space-y-4">
                             <div className="relative">
-                                <input 
+                                <input
                                     type={showPass.old ? "text" : "password"}
                                     placeholder="Mật khẩu hiện tại"
                                     className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-medium"
                                     value={passData.oldPassword}
-                                    onChange={(e) => setPassData({...passData, oldPassword: e.target.value})}
+                                    onChange={(e) => setPassData({ ...passData, oldPassword: e.target.value })}
                                     required
                                 />
-                                <button type="button" onClick={() => setShowPass({...showPass, old: !showPass.old})} className="absolute right-3 top-2.5 text-slate-400">
-                                    {showPass.old ? <EyeOff size={18}/> : <Eye size={18}/>}
+                                <button type="button" onClick={() => setShowPass({ ...showPass, old: !showPass.old })} className="absolute right-3 top-2.5 text-slate-400">
+                                    {showPass.old ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
                             <div className="relative">
-                                <input 
+                                <input
                                     type={showPass.new ? "text" : "password"}
                                     placeholder="Mật khẩu mới"
                                     className="w-full pl-4 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-medium"
                                     value={passData.newPassword}
-                                    onChange={(e) => setPassData({...passData, newPassword: e.target.value})}
+                                    onChange={(e) => setPassData({ ...passData, newPassword: e.target.value })}
                                     required
                                 />
-                                <button type="button" onClick={() => setShowPass({...showPass, new: !showPass.new})} className="absolute right-3 top-2.5 text-slate-400">
-                                    {showPass.new ? <EyeOff size={18}/> : <Eye size={18}/>}
+                                <button type="button" onClick={() => setShowPass({ ...showPass, new: !showPass.new })} className="absolute right-3 top-2.5 text-slate-400">
+                                    {showPass.new ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
-                            <input 
+                            <input
                                 type="password"
                                 placeholder="Xác nhận mật khẩu mới"
                                 className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-medium"
                                 value={passData.confirmPassword}
-                                onChange={(e) => setPassData({...passData, confirmPassword: e.target.value})}
+                                onChange={(e) => setPassData({ ...passData, confirmPassword: e.target.value })}
                                 required
                             />
                             <button type="submit" className="w-full py-3 bg-[#00529C] text-white rounded-xl font-bold text-[12px] uppercase shadow-lg hover:bg-blue-800 transition-all active:scale-95">
@@ -184,41 +186,53 @@ const Profile = () => {
                                 <InfoItem label="Ngày sinh" value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} icon={Calendar} isReadOnly />
 
                                 {/* Các trường CÓ THỂ SỬA */}
-                                <EditableItem 
-                                    label="Địa chỉ Email" 
-                                    value={profile?.Email} 
-                                    icon={Mail} 
+                                <EditableSelect
+                                    label="Giới tính"
+                                    value={profile?.GioiTinh === 1 ? 'Nam' : (profile?.GioiTinh === 0 ? 'Nữ' : 'Chưa cập nhật')}
+                                    icon={User}
+                                    isEditing={isEditing}
+                                    inputValue={editFormData.gioiTinh}
+                                    onChange={(val) => setEditFormData({ ...editFormData, gioiTinh: val })}
+                                    options={[
+                                        { value: 1, label: 'Nam' },
+                                        { value: 0, label: 'Nữ' }
+                                    ]}
+                                />
+                                <EditableItem
+                                    label="Địa chỉ Email"
+                                    value={profile?.Email}
+                                    icon={Mail}
                                     isEditing={isEditing}
                                     inputValue={editFormData.email}
-                                    onChange={(val) => setEditFormData({...editFormData, email: val})}
+                                    onChange={(val) => setEditFormData({ ...editFormData, email: val })}
                                 />
-                                <EditableItem 
-                                    label="Số điện thoại" 
-                                    value={profile?.SDT || 'Chưa cập nhật'} 
-                                    icon={Phone} 
+                                <EditableItem
+                                    label="Số điện thoại"
+                                    value={profile?.SDT || 'Chưa cập nhật'}
+                                    icon={Phone}
                                     isEditing={isEditing}
                                     inputValue={editFormData.sdt}
-                                    onChange={(val) => setEditFormData({...editFormData, sdt: val})}
+                                    onChange={(val) => setEditFormData({ ...editFormData, sdt: val })}
                                 />
-                                <EditableItem 
-                                    label="Số CCCD" 
-                                    value={profile?.CCCD} 
-                                    icon={ShieldCheck} 
+                                <EditableItem
+                                    label="Số CCCD"
+                                    value={profile?.CCCD}
+                                    icon={ShieldCheck}
                                     isEditing={isEditing}
                                     inputValue={editFormData.cccd}
-                                    onChange={(val) => setEditFormData({...editFormData, cccd: val})}
+                                    onChange={(val) => setEditFormData({ ...editFormData, cccd: val })}
                                 />
                             </div>
 
                             {/* Nút lưu khi ở chế độ Edit */}
                             {isEditing && (
                                 <div className="pt-4 animate-in slide-in-from-bottom-2 duration-300">
-                                    <button 
+                                    <button
                                         type="submit"
                                         disabled={isUpdating}
                                         className="w-full md:w-auto flex items-center justify-center px-10 py-3 bg-[#00529C] text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-blue-100 hover:bg-blue-800 transition-all active:scale-95"
                                     >
-                                        {isUpdating ? <Loader2 className="animate-spin mr-2" size={16}/> : <Save className="mr-2" size={16}/>}
+                                        {isUpdating ? <Loader2 className="animate-spin mr-2" size={16} /> : <Save className="mr-2" size={16} />}
                                         Lưu thay đổi hồ sơ
                                     </button>
                                 </div>
@@ -266,11 +280,34 @@ const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChang
             <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
         </div>
         {isEditing ? (
-            <input 
+            <input
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 transition-all "
                 value={inputValue}
                 onChange={(e) => onChange(e.target.value)}
             />
+        ) : (
+            <p className="text-sm font-semibold text-slate-700 pl-5">{value || "---"}</p>
+        )}
+    </div>
+);
+
+// Component cho các trường có thể cập nhật dạng Dropdown (Select)
+const EditableSelect = ({ label, value, icon: Icon, isEditing, inputValue, onChange, options }) => (
+    <div className="space-y-1.5">
+        <div className="flex items-center text-slate-400 gap-1.5">
+            <Icon size={14} />
+            <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
+        </div>
+        {isEditing ? (
+            <select
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 transition-all cursor-pointer"
+                value={inputValue}
+                onChange={(e) => onChange(Number(e.target.value))} // Ép về số nguyên
+            >
+                {options.map((opt, idx) => (
+                    <option key={idx} value={opt.value}>{opt.label}</option>
+                ))}
+            </select>
         ) : (
             <p className="text-sm font-semibold text-slate-700 pl-5">{value || "---"}</p>
         )}

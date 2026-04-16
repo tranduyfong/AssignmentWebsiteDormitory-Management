@@ -1,5 +1,5 @@
 const pool = require('../configs/db.config');
-
+const { vnpay, returnUrl } = require('../configs/vnpay.config');
 
 exports.getRoomList = async (req, res) => {
     try {
@@ -96,7 +96,7 @@ exports.getUnpaidInvoices = async (req, res) => {
             WHERE hd.MaSV = ? AND hd.TrangThaiThanhToan = 0
             ORDER BY hd.NgayLap DESC
         `;
-        
+
         const [unpaidInvoices] = await pool.execute(query, [maSV]);
         res.status(200).json(unpaidInvoices);
     } catch (error) {
@@ -149,5 +149,73 @@ exports.getRules = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi khi lấy danh sách nội quy.' });
+    }
+};
+
+// 1. TẠO URL THANH TOÁN VNPAY (Đã dùng thư viện)
+exports.createPaymentUrl = async (req, res) => {
+    try {
+        const ipAddr = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '127.0.0.1';
+        const { amount, invoiceIds } = req.body;
+
+        const orderId = new Date().getTime().toString();
+        const orderInfo = `THANH_TOAN_HD_${invoiceIds.join('_')}`;
+
+        // Thư viện sẽ tự động format ngày giờ, sắp xếp tham số và tạo mã băm
+        const paymentUrl = vnpay.buildPaymentUrl({
+            vnp_Amount: amount, // Truyền đúng số tiền VNĐ (thư viện sẽ tự nhân 100)
+            vnp_IpAddr: ipAddr,
+            vnp_TxnRef: orderId,
+            vnp_OrderInfo: orderInfo,
+            vnp_OrderType: 'other',
+            vnp_ReturnUrl: returnUrl,
+            vnp_Locale: 'vn'
+        });
+
+        res.status(200).json({ paymentUrl });
+    } catch (error) {
+        console.error("Lỗi tạo URL VNPay:", error);
+        res.status(500).json({ message: 'Lỗi server khi tạo thanh toán.' });
+    }
+};
+
+// 2. XỬ LÝ KẾT QUẢ VNPAY TRẢ VỀ VÀ CẬP NHẬT DATABASE
+exports.vnpayReturn = async (req, res) => {
+    const frontendRedirectUrl = 'http://localhost:5173/student/invoices'; // Nhớ đổi thành URL Frontend của bạn
+
+    try {
+        // Thư viện tự động xác thực chữ ký (Checksum) cực kỳ an toàn
+        const verify = vnpay.verifyReturnUrl(req.query);
+
+        if (!verify.isSuccess) {
+            // Dữ liệu bị sai hoặc có người cố tình can thiệp vào URL
+            return res.redirect(`${frontendRedirectUrl}?paymentStatus=invalid`);
+        }
+
+        // vnp_ResponseCode == '00' là khách đã trừ tiền thành công
+        if (req.query.vnp_ResponseCode === '00') {
+            const orderInfo = req.query.vnp_OrderInfo; // VD: THANH_TOAN_HD_1_2_3
+
+            // Tách lấy danh sách ID hóa đơn [1, 2, 3]
+            const idString = orderInfo.replace('THANH_TOAN_HD_', '');
+            const invoiceIds = idString.split('_');
+
+            if (invoiceIds.length > 0) {
+                // Cập nhật CSDL: Chuyển hóa đơn sang Đã thanh toán (1)
+                await pool.query(
+                    'UPDATE HoaDon SET TrangThaiThanhToan = 1 WHERE MaHoaDon IN (?)',
+                    [invoiceIds]
+                );
+            }
+
+            // Chuyển hướng về React
+            return res.redirect(`${frontendRedirectUrl}?paymentStatus=success`);
+        } else {
+            // Khách hàng bấm "Hủy giao dịch" hoặc thẻ không đủ tiền
+            return res.redirect(`${frontendRedirectUrl}?paymentStatus=failed`);
+        }
+    } catch (error) {
+        console.error("Lỗi update CSDL sau khi thanh toán:", error);
+        res.redirect(`${frontendRedirectUrl}?paymentStatus=error`);
     }
 };
