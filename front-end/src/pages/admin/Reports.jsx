@@ -77,7 +77,7 @@ const handleExportPDF = async () => {
     const dateStr = new Date().toLocaleDateString('vi-VN').replaceAll('/', '-');
     pdf.save(`Bao_cao_KTX_${dateStr}.pdf`);
     
-    toast.success("Báo cáo đã sẵn sàng!", { id: loadingToast });
+    toast.success("Báo cáo đã được tải về!", { id: loadingToast });
   } catch (error) {
     console.error("Lỗi:", error);
     toast.error("Lỗi xử lý PDF", { id: loadingToast });

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Calendar, Clock, CheckCircle2, XCircle, 
   Edit, Trash2, X, Save, Repeat, LogOut, 
-  FileCheck, Download, Loader2, ArrowRight
+  FileCheck, Download, Loader2, ArrowRight,
+  ChevronLeft, ChevronRight // Thêm icon cho phân trang
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -13,7 +14,10 @@ const Contracts = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('Tất cả');
 
-  // 1. Lấy danh sách hợp đồng từ API
+  // --- 1. State cho Phân trang ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Số bản ghi trên mỗi trang
+
   const fetchContracts = async () => {
     try {
       setIsLoading(true);
@@ -31,20 +35,23 @@ const Contracts = () => {
     fetchContracts();
   }, []);
 
-  // 2. Hàm Chấm dứt hợp đồng
+  // --- 2. Reset về trang 1 khi thay đổi bộ lọc hoặc tìm kiếm ---
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
+
   const handleTerminate = async (id, name) => {
     if (window.confirm(`Xác nhận chấm dứt hợp đồng của sinh viên ${name}? Hệ thống sẽ giải phóng chỗ ở ngay lập tức.`)) {
       try {
         await axiosClient.put(`/admin/contracts/${id}/terminate`);
         toast.success('Đã chấm dứt hợp đồng và giải phóng phòng.');
-        fetchContracts(); // Tải lại dữ liệu
+        fetchContracts();
       } catch (error) {
         toast.error(error.response?.data?.message || 'Lỗi khi chấm dứt hợp đồng');
       }
     }
   };
 
-  // 3. Hàm Gia hạn hợp đồng (Cộng thêm 6 tháng từ ngày kết thúc cũ)
   const handleExtend = async (contract) => {
     const currentEndDate = new Date(contract.NgayKetThuc);
     const newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + 6))
@@ -63,18 +70,22 @@ const Contracts = () => {
     }
   };
 
-  // 4. Logic Lọc và Tìm kiếm
   const filteredContracts = contracts.filter(c => {
     const matchesSearch = c.TenSinhVien?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           c.MaSV?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           c.MaHopDong?.toString().includes(searchQuery);
     
-    // Mapping TrangThai: 1 là Đang hiệu lực, 0 là Đã chấm dứt/Hết hạn
     const statusText = c.TrangThai === 1 ? 'Đang hiệu lực' : 'Đã chấm dứt';
     const matchesStatus = filterStatus === 'Tất cả' || statusText === filterStatus;
     
     return matchesSearch && matchesStatus;
   });
+
+  // --- 3. Tính toán dữ liệu hiển thị theo trang ---
+  const totalPages = Math.ceil(filteredContracts.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredContracts.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10 font-sans">
@@ -82,9 +93,8 @@ const Contracts = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800 tracking-tight uppercase">Quản lý Hợp đồng</h1>
-          <p className="text-slate-500 font-medium text-sm italic">Quản lý thời hạn lưu trú và các nghiệp vụ gia hạn/chấm dứt</p>
+          <p className="text-slate-500 font-medium text-sm">Quản lý thời hạn lưu trú và các nghiệp vụ gia hạn/chấm dứt</p>
         </div>
-        
       </div>
 
       {/* Thống kê nhanh */}
@@ -138,10 +148,10 @@ const Contracts = () => {
                         <Loader2 className="animate-spin mx-auto mb-2" /> Đang tải dữ liệu...
                     </td>
                 </tr>
-              ) : filteredContracts.length === 0 ? (
+              ) : currentItems.length === 0 ? (
                 <tr><td colSpan="6" className="py-20 text-center text-slate-400 italic font-normal">Không tìm thấy hợp đồng nào phù hợp.</td></tr>
               ) : (
-                filteredContracts.map((c) => (
+                currentItems.map((c) => (
                     <tr key={c.MaHopDong} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4 font-bold text-slate-900">HD{c.MaHopDong}</td>
                       <td className="px-6 py-4">
@@ -194,12 +204,52 @@ const Contracts = () => {
             </tbody>
           </table>
         </div>
+
+        {/* --- 4. Giao diện Phân trang --- */}
+        {!isLoading && filteredContracts.length > 0 && (
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-semibold italic">
+              Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredContracts.length)} trên {filteredContracts.length} hợp đồng
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent"
+              >
+                <ChevronLeft size={16} className="text-slate-600" />
+              </button>
+              
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${
+                    currentPage === i + 1 
+                    ? "bg-[#00529C] text-white shadow-md shadow-blue-100" 
+                    : "text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent"
+              >
+                <ChevronRight size={16} className="text-slate-600" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
-// --- Sub-components ---
+// Sub-components giữ nguyên...
 const StatCard = ({ label, value, icon: Icon, color, bg }) => (
   <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
     <div className={`p-3 rounded-xl ${bg} ${color}`}><Icon size={20} /></div>
@@ -211,7 +261,6 @@ const StatCard = ({ label, value, icon: Icon, color, bg }) => (
 );
 
 const StatusBadge = ({ status }) => {
-  // status 1: Đang hiệu lực, 0: Chấm dứt/Hết hạn
   return (
     <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold border uppercase tracking-tighter ${
         status === 1 ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-100 text-slate-400 border-slate-200'

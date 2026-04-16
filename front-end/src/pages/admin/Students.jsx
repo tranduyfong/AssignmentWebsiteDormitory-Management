@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, Edit, Trash2, UserPlus, Filter, 
-  Phone, CreditCard, School, X, Loader2, Eye, EyeOff, Calendar, Mail 
+  Phone, CreditCard, School, X, Loader2, Eye, EyeOff, Calendar, Mail , ChevronLeft, ChevronRight 
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -13,6 +13,10 @@ const Students = () => {
   const [editingStudent, setEditingStudent] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [filterStatus, setFilterStatus] = useState('Tất cả');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
 
   // 1. Thêm ngaySinh vào state formData
   const [formData, setFormData] = useState({
@@ -41,6 +45,10 @@ const Students = () => {
   useEffect(() => {
     fetchStudents();
   }, []);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterStatus]);
 
   // Hàm phụ trợ để format ngày về dạng YYYY-MM-DD cho ô input type="date"
   const formatDateForInput = (dateStr) => {
@@ -113,8 +121,20 @@ const Students = () => {
 
   const filteredStudents = students.filter(s => {
     const matchesSearch = s.HoTen?.toLowerCase().includes(searchQuery.toLowerCase()) || s.MaSV?.includes(searchQuery);
-    return matchesSearch;
+    let currentStatus = s.TenPhong ? "Đang ở" : "Chưa ở";
+    const matchesFilter = filterStatus === 'Tất cả' || currentStatus === filterStatus;
+    return matchesSearch && matchesFilter;
   });
+
+  // Tính toán dữ liệu hiển thị trên trang hiện tại
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentStudents = filteredStudents.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+
+  
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 font-sans">
@@ -133,8 +153,8 @@ const Students = () => {
       </div>
 
       {/* Search Bar */}
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 font-medium">
-        <div className="relative text-sm">
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full font-medium">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
@@ -143,6 +163,18 @@ const Students = () => {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          <Filter size={16} className="text-slate-400 hidden md:block" />
+          <select 
+            className="w-full md:w-48 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold text-slate-600 focus:border-[#00529C] cursor-pointer"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+          >
+            <option value="Tất cả">Tất cả trạng thái</option>
+            <option value="Đang ở">Đang ở</option>
+            <option value="Chưa ở">Chưa nhận phòng</option>
+          </select>
         </div>
       </div>
 
@@ -169,7 +201,7 @@ const Students = () => {
                     Đang tải dữ liệu...
                   </td>
                 </tr>
-              ) : filteredStudents.map((student) => (
+              ) : currentStudents.map((student) => (
                 <tr key={student.MaSV} className="hover:bg-blue-50/30 transition-colors group font-semibold">
                   <td className="px-6 py-4 font-bold text-[#00529C]">{student.MaSV}</td>
                   <td className="px-6 py-4">
@@ -220,6 +252,44 @@ const Students = () => {
             </tbody>
           </table>
         </div>
+         {!isLoading && filteredStudents.length > 0 && (
+          <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-semibold italic">
+              Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredStudents.length)} trên {filteredStudents.length} sinh viên
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent"
+              >
+                <ChevronLeft size={16} className="text-slate-600" />
+              </button>
+              
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${
+                    currentPage === i + 1 
+                    ? "bg-[#00529C] text-white shadow-md shadow-blue-100" 
+                    : "text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm disabled:opacity-30 transition-all border border-transparent"
+              >
+                <ChevronRight size={16} className="text-slate-600" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Form */}
