@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     User, Mail, Phone, ShieldCheck, Lock, Eye, EyeOff,
-    Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2
+    Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2, Users
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -90,7 +90,7 @@ const Profile = () => {
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight">Hồ sơ cá nhân</h1>
-                    <p className="text-slate-500 font-medium text-sm italic">Quản lý thông tin hồ sơ và bảo mật tài khoản</p>
+                    <p className="text-slate-500 font-medium text-sm">Quản lý thông tin hồ sơ và bảo mật tài khoản</p>
                 </div>
                 {!isEditing ? (
                     <button
@@ -183,6 +183,7 @@ const Profile = () => {
                                 {/* Các trường không thể sửa */}
                                 <InfoItem label="Họ và Tên" value={profile?.HoTen} icon={User} isReadOnly />
                                 <InfoItem label="Mã sinh viên" value={profile?.MaSV} icon={ShieldCheck} isReadOnly />
+                                <InfoItem label="Giới tính" value={profile?.GioiTinh === 1 ? 'Nam' : 'Nữ'} icon={Users} />
                                 <InfoItem label="Ngày sinh" value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} icon={Calendar} isReadOnly />
 
                                 {/* Các trường CÓ THỂ SỬA */}

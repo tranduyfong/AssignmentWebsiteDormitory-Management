@@ -6,6 +6,7 @@ const Incidents = () => {
   const [incidents, setIncidents] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterStatus, setFilterStatus] = useState('Tất cả');
 
   const fetchIncidents = async () => {
     try {
@@ -36,10 +37,17 @@ const Incidents = () => {
     }
   };
 
-  const filteredData = incidents.filter(item =>
-    item.TenSinhVien?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.TenPhong?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+const filteredData = incidents.filter(item => {
+    const matchesSearch = item.TenSinhVien?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          item.TenPhong?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Logic lọc theo trạng thái (0: Chờ xử lý, 1: Đã xử lý)
+    const matchesStatus = filterStatus === 'Tất cả' ||
+                          (filterStatus === 'Chờ xử lý' && item.TrangThai === 0) ||
+                          (filterStatus === 'Đã xử lý' && item.TrangThai === 1);
+
+    return matchesSearch && matchesStatus;
+  });
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
@@ -50,17 +58,26 @@ const Incidents = () => {
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-        <div className="relative text-sm">
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
+        <div className="relative flex-1 w-full text-sm">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
           <input
             type="text"
             placeholder="Tìm theo phòng hoặc tên sinh viên..."
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:border-amber-500 outline-none"
+            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:border-blue-500 outline-none transition-all"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        <select
+          className="w-full md:w-48 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold text-slate-600 cursor-pointer"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+        >
+          <option value="Tất cả">Tất cả trạng thái</option>
+          <option value="Chờ xử lý">Đang chờ xử lý</option>
+          <option value="Đã xử lý">Đã xử lý</option>
+        </select>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

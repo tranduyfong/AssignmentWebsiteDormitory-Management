@@ -69,7 +69,7 @@ const RoomRegistration = () => {
             <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex items-start space-x-3">
                 <Info size={20} className="text-blue-600 mt-0.5 flex-shrink-0" />
                 <p className="text-sm text-blue-800 leading-relaxed font-medium">
-                    Lưu ý: Bạn chỉ được phân phòng khi thanh toán đủ các khoản phí quy định. Việc chọn Khu/Tòa nhà mang tính chất nguyện vọng, BQL sẽ sắp xếp dựa trên tình trạng thực tế.
+                    Lưu ý: Sinh viên cần điền chính xác thông tin. Việc chọn Khu/Tòa nhà mang tính chất nguyện vọng, BQL sẽ sắp xếp dựa trên tình trạng phòng thực tế.
                 </p>
             </div>
 

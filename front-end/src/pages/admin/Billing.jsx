@@ -36,7 +36,7 @@ const Billing = () => {
             {/* Header chung */}
             <div>
                 <h1 className="text-2xl font-semibold text-slate-800 uppercase tracking-tighter">Quản lý thu phí</h1>
-                <p className="text-slate-500 font-medium text-sm tracking-tight">Điều phối các khoản phí tiền phòng, điện và nước</p>
+                <p className="text-slate-500 font-medium text-sm tracking-tight">Quản lý các khoản phí tiền phòng, tiền điện, tiền nước</p>
             </div>
 
             {/* Switcher Tabs */}

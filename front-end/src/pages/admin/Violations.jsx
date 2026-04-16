@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   AlertTriangle, Search, Plus, Gavel, 
-  Trash2, X, CheckCircle2, ShieldAlert, Save, Clock
+  Trash2, X, CheckCircle2, ShieldAlert, Save, Clock,
+  ChevronLeft, ChevronRight // Thêm icon cho phân trang
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -12,8 +13,12 @@ const Violations = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('Tất cả');
+  const [filterStatus, setFilterStatus] = useState('Tất cả');
 
-  // State cho Form (Chỉ giữ lại các trường nhập liệu cần thiết)
+  // --- 1. State cho Phân trang ---
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10; // Số bản ghi trên mỗi trang
+
   const [formData, setFormData] = useState({
     maSV: '', 
     loaiViPham: '', 
@@ -38,11 +43,14 @@ const Violations = () => {
     fetchViolations();
   }, []);
 
-  // Ghi nhận vi phạm mới
+  // --- 2. Reset về trang 1 khi lọc hoặc tìm kiếm ---
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, filterStatus]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Khi thêm mới, Backend mặc định TrangThai = 0 (Chờ xử lý)
       await axiosClient.post('/admin/violations', formData);
       toast.success('Ghi nhận vi phạm thành công!');
       setIsModalOpen(false);
@@ -53,7 +61,6 @@ const Violations = () => {
     }
   };
 
-  // Hàm Xử lý vi phạm (Cập nhật trạng thái)
   const handleProcessViolation = async (id) => {
     if (window.confirm("Xác nhận đã xử lý xong vi phạm này?")) {
       try {
@@ -82,8 +89,17 @@ const Violations = () => {
     const matchesSearch = item.TenSinhVien?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.MaSV?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = filterType === 'Tất cả' || item.LoaiViPham === filterType;
-    return matchesSearch && matchesType;
+    const matchesStatus = filterStatus === 'Tất cả' || 
+                          (filterStatus === 'Chờ xử lý' && item.TrangThai === 0) ||
+                          (filterStatus === 'Đã xử lý' && item.TrangThai === 1);
+    return matchesSearch && matchesType && matchesStatus;
   });
+
+  // --- 3. Tính toán dữ liệu hiển thị theo trang ---
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
@@ -91,7 +107,7 @@ const Violations = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-slate-800 tracking-tight uppercase">Quản lý vi phạm</h1>
-          <p className="text-slate-500 font-medium text-sm">Ghi nhận vi phạm và thực hiện kỷ luật sinh viên nội trú</p>
+          <p className="text-slate-500 font-medium text-sm">Ghi nhận vi phạm và lưu trữ lịch sử kỷ luật sinh viên</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
@@ -120,17 +136,29 @@ const Violations = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <select
-          className="w-full md:w-48 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold text-slate-600"
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-        >
-          <option value="Tất cả">Tất cả loại lỗi</option>
-          <option value="Sử dụng thiết bị điện cấm">Sử dụng thiết bị cấm</option>
-          <option value="Đi muộn">Đi muộn</option>
-          <option value="Gây mất trật tự">Gây mất trật tự</option>
-          <option value="Vệ sinh kém">Vệ sinh kém</option>
-        </select>
+         <div className="flex flex-1 w-full gap-2">
+            <select
+            className="w-full p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold text-slate-600"
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            >
+            <option value="Tất cả">Tất cả loại lỗi</option>
+            <option value="Sử dụng thiết bị điện cấm">Sử dụng thiết bị cấm</option>
+            <option value="Đi muộn">Đi muộn</option>
+            <option value="Gây mất trật tự">Gây mất trật tự</option>
+            <option value="Vệ sinh kém">Vệ sinh kém</option>
+            </select>
+
+            <select
+            className="w-full p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold text-slate-600"
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            >
+            <option value="Tất cả">Tất cả trạng thái</option>
+            <option value="Chờ xử lý">Chờ xử lý</option>
+            <option value="Đã xử lý">Đã xử lý</option>
+            </select>
+        </div>
       </div>
 
       {/* Table Section */}
@@ -150,10 +178,10 @@ const Violations = () => {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr><td colSpan="6" className="text-center py-20 text-slate-400 italic font-normal">Đang tải dữ liệu...</td></tr>
-              ) : filteredData.length === 0 ? (
+              ) : currentItems.length === 0 ? (
                 <tr><td colSpan="6" className="text-center py-20 text-slate-400 italic font-normal">Không tìm thấy bản ghi nào.</td></tr>
               ) : (
-                filteredData.map((v) => (
+                currentItems.map((v) => (
                   <tr key={v.MaViPham} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-semibold text-slate-900">{new Date(v.NgayViPham).toLocaleDateString('vi-VN')}</div>
@@ -177,7 +205,6 @@ const Violations = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
-                        {/* Nút Xử lý thay thế icon History */}
                         {v.TrangThai === 0 && (
                            <button 
                             onClick={() => handleProcessViolation(v.MaViPham)}
@@ -200,6 +227,47 @@ const Violations = () => {
             </tbody>
           </table>
         </div>
+
+        {/* --- 4. Giao diện Phân trang --- */}
+        {!isLoading && filteredData.length > 0 && (
+          <div className="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+            <p className="text-xs text-slate-500 font-semibold">
+              Hiển thị {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredData.length)} trên tổng {filteredData.length} vi phạm
+            </p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <ChevronLeft size={18} className="text-slate-600" />
+              </button>
+              
+              {/* Tạo các nút số trang */}
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                    currentPage === i + 1 
+                    ? "bg-[#00529C] text-white shadow-md shadow-blue-100" 
+                    : "text-slate-600 hover:bg-white hover:shadow-sm"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="p-2 rounded-lg hover:bg-white hover:shadow-sm border border-transparent disabled:opacity-30 disabled:hover:bg-transparent transition-all"
+              >
+                <ChevronRight size={18} className="text-slate-600" />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal ghi nhận vi phạm */}
@@ -282,7 +350,6 @@ const Violations = () => {
   );
 };
 
-// --- Sub-components ---
 const QuickStat = ({ label, value, icon: Icon, color, bg }) => (
   <div className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center space-x-4">
     <div className={`p-3 rounded-xl ${bg} ${color}`}><Icon size={22} /></div>
@@ -294,7 +361,6 @@ const QuickStat = ({ label, value, icon: Icon, color, bg }) => (
 );
 
 const StatusBadge = ({ status }) => {
-    // 0: Chờ xử lý (Vàng), 1: Đã xử lý (Xanh)
     return (
         <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold border uppercase tracking-tighter ${
             status === 0 ? "bg-amber-50 text-amber-600 border-amber-100" : "bg-emerald-50 text-emerald-600 border-emerald-100"
