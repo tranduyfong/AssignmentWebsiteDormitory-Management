@@ -1,19 +1,19 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Register from './pages/Register';
+import { BrowserRouter, Routes, Route, Navigate,Link } from 'react-router-dom';
+import Login from './pages/auth/Login';
+import Register from './pages/auth/Register';
 import AdminLayout from './layouts/AdminLayout';
-import Infrastructure from './pages/Infrastructure';
-import Students from './pages/Students';
-import Rooms from './pages/Rooms';
-import Incidents from './pages/Incidents';
-import Violations from './pages/Violations';
-import DormRules from './pages/DormRules';
-import Billing from './pages/Billing';
-import Reports from './pages/Reports';
-import Invoices from './pages/Invoices';
-import RoomAssignment from './pages/RoomAssignment';
-import Contracts from './pages/Contracts';
+import Infrastructure from './pages/admin/Infrastructure';
+import Students from './pages/admin/Students';
+import Rooms from './pages/admin/Rooms';
+import Incidents from './pages/admin/Incidents';
+import Violations from './pages/admin/Violations';
+import DormRules from './pages/admin/DormRules';
+import Billing from './pages/admin/Billing';
+import Reports from './pages/admin/Reports';
+import Invoices from './pages/admin/Invoices';
+import RoomAssignment from './pages/admin/RoomAssignment';
+import Contracts from './pages/admin/Contracts';
 import StudentLayout from './layouts/StudentLayout';
 import RoomRegistration from './pages/student/RoomRegistration';
 import RoomList from './pages/student/RoomList';
@@ -23,19 +23,22 @@ import PayInvoice from './pages/student/PayInvoice';
 import MyViolations from './pages/student/MyViolations';
 import ViewRules from './pages/student/ViewRules';
 import SubmitIncident from './pages/student/SubmitIncident';
+import Profile from './pages/student/Profile';
+import { Toaster } from 'react-hot-toast';
 
-// Placeholder cho Dashboard của Admin
-const AdminDashboard = () => <h1 className="text-2xl font-black uppercase text-slate-800">Dashboard Tổng Quan</h1>;
 
 function App() {
   return (
+    <>
+    <Toaster position="top-center" reverseOrder={false} />
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        <Route path="/" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<Reports />} /> 
           <Route path="students" element={<Students />} />
           <Route path="rooms" element={<Rooms />} />
           <Route path="infrastructure" element={<Infrastructure />} />
@@ -49,29 +52,36 @@ function App() {
           <Route path="contracts" element={<Contracts />} />
         </Route>
 
-        <Route path="/student" element={<StudentLayout />}>
-          <Route index element={<Navigate to="/student/rooms" replace />} />
+          <Route path="/student" element={<StudentLayout />}>
+            <Route index element={<Navigate to="/student/rooms" replace />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="register-room" element={<RoomRegistration />} />
+            <Route path="rooms" element={<RoomList />} />
+            <Route path="contracts" element={<MyContracts />} />
+            <Route path="invoices" element={<MyInvoices />} />
+            <Route path="pay-invoice" element={<PayInvoice />} />
+            <Route path="violations" element={<MyViolations />} />
+            <Route path="rules" element={<ViewRules />} />
+            <Route path="incidents" element={<SubmitIncident />} />
+          </Route>
 
-          <Route path="register-room" element={<RoomRegistration />} />
-          <Route path="rooms" element={<RoomList />} />
-          <Route path="contracts" element={<MyContracts />} />
-          <Route path="invoices" element={<MyInvoices />} />
-          <Route path="pay-invoice" element={<PayInvoice />} />
-          <Route path="violations" element={<MyViolations />} />
-          <Route path="rules" element={<ViewRules />} />
-          <Route path="incidents" element={<SubmitIncident />} />
-        </Route>
-
-        <Route path="*" element={
-          <div className="min-h-screen flex items-center justify-center bg-slate-50">
-            <div className="text-center">
-              <h1 className="text-6xl font-black text-slate-300">404</h1>
-              <p className="text-slate-500 font-medium mt-2">Trang bạn tìm kiếm không tồn tại.</p>
+          <Route path="*" element={
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+              <div className="text-center">
+                <h1 className="text-6xl font-black text-slate-300">404</h1>
+                <p className="text-slate-500 font-medium mt-2">Trang bạn tìm kiếm không tồn tại.</p>
+                <Link
+          to="/login"
+          className="inline-block mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-500 transition"
+        >
+          Quay về trang chính
+        </Link>
+              </div>
             </div>
-          </div>
-        } />
-      </Routes>
-    </BrowserRouter>
+          } />
+        </Routes>
+      </BrowserRouter>
+  </>
   );
 }
 

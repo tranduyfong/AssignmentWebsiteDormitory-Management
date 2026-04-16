@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, User, Mail, ShieldCheck } from 'lucide-react';
+import { Lock, User, Mail, ShieldCheck, Eye, EyeOff } from 'lucide-react';
+import axiosClient from '../../utils/axios.interceptor';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -10,18 +11,38 @@ const Register = () => {
         password: '',
         confirmPassword: ''
     });
+    
+    // State quản lý ẩn/hiện cho từng ô mật khẩu
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    
+    const [errorMsg, setErrorMsg] = useState('');
     const navigate = useNavigate();
 
-    const handleRegister = (e) => {
+    const handleRegister = async (e) => {
         e.preventDefault();
+        setErrorMsg('');
+
         if (formData.password !== formData.confirmPassword) {
-            alert("Mật khẩu xác nhận không khớp!");
+            setErrorMsg("Mật khẩu xác nhận không khớp!");
             return;
         }
-        // Xử lý logic đăng ký ở đây
-        console.log('Đăng ký với:', formData);
-        alert('Đăng ký thành công! Vui lòng đăng nhập.');
-        navigate('/login');
+
+        try {
+            const payload = {
+                msv: formData.msv,
+                fullname: formData.fullname,
+                email: formData.email,
+                password: formData.password
+            };
+
+            await axiosClient.post('/auth/register', payload);
+            alert('Đăng ký thành công! Vui lòng đăng nhập.');
+            navigate('/login');
+
+        } catch (error) {
+            setErrorMsg(error.response?.data?.message || 'Đăng ký thất bại. Vui lòng thử lại!');
+        }
     };
 
     return (
@@ -31,13 +52,21 @@ const Register = () => {
                     Tạo tài khoản mới
                 </h2>
                 <p className="mt-2 text-center text-sm font-bold text-slate-500 uppercase tracking-widest">
-                    Cổng thông tin KTX HUMG
+                    Cổng thông tin KTX
                 </p>
             </div>
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-2xl sm:rounded-[24px] sm:px-10 border border-slate-100">
+
+                    {errorMsg && (
+                        <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold text-center animate-in fade-in">
+                            {errorMsg}
+                        </div>
+                    )}
+
                     <form className="space-y-5" onSubmit={handleRegister}>
+                        {/* Họ và Tên */}
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                                 Họ và Tên
@@ -57,6 +86,7 @@ const Register = () => {
                             </div>
                         </div>
 
+                        {/* Mã sinh viên */}
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                                 Mã sinh viên
@@ -76,18 +106,19 @@ const Register = () => {
                             </div>
                         </div>
 
+                        {/* Email */}
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                                 Email
                             </label>
                             <div className="relative">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <ShieldCheck className="h-5 w-5 text-slate-400" />
+                                    <Mail className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input
-                                    type="text"
+                                    type="email"
                                     required
-                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800 uppercase"
+                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
                                     placeholder="Nhập email sinh viên"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -95,6 +126,7 @@ const Register = () => {
                             </div>
                         </div>
 
+                        {/* Mật khẩu */}
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                                 Mật khẩu
@@ -104,16 +136,24 @@ const Register = () => {
                                     <Lock className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"}
                                     required
-                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
+                                    className="block w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
                                     placeholder="Tạo mật khẩu"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#00529C] transition-colors focus:outline-none"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
                             </div>
                         </div>
 
+                        {/* Xác nhận mật khẩu */}
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                                 Xác nhận mật khẩu
@@ -123,13 +163,20 @@ const Register = () => {
                                     <Lock className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input
-                                    type="password"
+                                    type={showConfirmPassword ? "text" : "password"}
                                     required
-                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
+                                    className="block w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
                                     placeholder="Nhập lại mật khẩu"
                                     value={formData.confirmPassword}
                                     onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                                 />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#00529C] transition-colors focus:outline-none"
+                                >
+                                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
                             </div>
                         </div>
 

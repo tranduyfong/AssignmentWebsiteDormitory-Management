@@ -1,7 +1,7 @@
 import React from 'react';
 import { Menu, Bell, Settings, User } from 'lucide-react';
 
-const Navbar = ({ setSidebarOpen, isSidebarOpen }) => {
+const AdminNavbar = ({ setSidebarOpen, isSidebarOpen, user }) => {
   return (
     <header className="h-20 bg-white border-b border-slate-200 flex items-center justify-between px-10">
       <div className="flex items-center space-x-4">
@@ -21,8 +21,8 @@ const Navbar = ({ setSidebarOpen, isSidebarOpen }) => {
         </div>
         <div className="flex items-center bg-slate-50 py-1.5 px-4 rounded-2xl border border-slate-100">
           <div className="text-right mr-4 hidden sm:block">
-            <p className="text-sm font-black text-slate-900 leading-none">Admin HUMG</p>
-            <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">Ban Quản Lý</p>
+            <p className="text-sm font-black text-slate-900 leading-none">Admin</p>
+            <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">{user?.name || "Chưa có tên"}</p>
           </div>
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg">
             <User size={20} />
@@ -33,4 +33,4 @@ const Navbar = ({ setSidebarOpen, isSidebarOpen }) => {
   );
 };
 
-export default Navbar;
+export default AdminNavbar;

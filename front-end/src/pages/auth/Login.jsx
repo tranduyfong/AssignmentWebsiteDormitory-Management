@@ -1,17 +1,33 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, User, ArrowRight } from 'lucide-react';
+import { Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import axiosClient from '../../utils/axios.interceptor';
 
 const Login = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
+    const [errorMsg, setErrorMsg] = useState('');
+    const [showPassword, setShowPassword] = useState(false); // State quản lý ẩn/hiện mật khẩu
     const navigate = useNavigate();
 
-    const handleLogin = (e) => {
+    const handleLogin = async (e) => {
         e.preventDefault();
-        // Thêm logic xử lý API đăng nhập ở đây
-        console.log('Đăng nhập với:', formData);
-        // Tạm thời chuyển hướng thẳng vào dashboard
-        navigate('/');
+        setErrorMsg('');
+
+        try {
+            const response = await axiosClient.post('/auth/login', formData);
+
+            localStorage.setItem('token', response.token);
+            localStorage.setItem('user', JSON.stringify(response.user));
+
+            if (response.user.role === 0) {
+                navigate('/admin'); // Đẩy vào Dashboard Admin
+            } else {
+                navigate('/student/rooms'); // Đẩy vào Cổng Sinh viên
+            }
+
+        } catch (error) {
+            setErrorMsg(error.response?.data?.message || 'Tài khoản hoặc mật khẩu không chính xác!');
+        }
     };
 
     return (
@@ -36,6 +52,13 @@ const Login = () => {
 
             <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
                 <div className="bg-white py-8 px-4 shadow-2xl sm:rounded-[24px] sm:px-10 border border-slate-100">
+
+                    {errorMsg && (
+                        <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 rounded-xl text-sm font-bold text-center animate-in fade-in">
+                            {errorMsg}
+                        </div>
+                    )}
+
                     <form className="space-y-6" onSubmit={handleLogin}>
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
@@ -60,18 +83,30 @@ const Login = () => {
                             <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">
                                 Mật khẩu
                             </label>
-                            <div className="relative">
+                            <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                                     <Lock className="h-5 w-5 text-slate-400" />
                                 </div>
                                 <input
-                                    type="password"
+                                    type={showPassword ? "text" : "password"} // Thay đổi type dựa trên state
                                     required
-                                    className="block w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
+                                    className="block w-full pl-11 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:bg-white focus:border-[#00529C] focus:ring-4 focus:ring-[#00529C]/10 transition-all font-medium text-slate-800"
                                     placeholder="••••••••"
                                     value={formData.password}
                                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 />
+                                {/* Nút Toggle Mật khẩu */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#00529C] transition-colors focus:outline-none"
+                                >
+                                    {showPassword ? (
+                                        <EyeOff size={20} strokeWidth={2} />
+                                    ) : (
+                                        <Eye size={20} strokeWidth={2} />
+                                    )}
+                                </button>
                             </div>
                         </div>
 
