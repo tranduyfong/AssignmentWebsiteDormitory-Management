@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate,Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, Link } from 'react-router-dom';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import AdminLayout from './layouts/AdminLayout';
@@ -25,32 +25,34 @@ import ViewRules from './pages/student/ViewRules';
 import SubmitIncident from './pages/student/SubmitIncident';
 import Profile from './pages/student/Profile';
 import { Toaster } from 'react-hot-toast';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 
 function App() {
   return (
     <>
-    <Toaster position="top-center" reverseOrder={false} />
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      <Toaster position="top-center" reverseOrder={false} />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<Reports />} /> 
-          <Route path="students" element={<Students />} />
-          <Route path="rooms" element={<Rooms />} />
-          <Route path="infrastructure" element={<Infrastructure />} />
-          <Route path="incidents" element={<Incidents />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="violations" element={<Violations />} />
-          <Route path="rules" element={<DormRules />} />
-          <Route path="billing" element={<Billing />} />
-          <Route path="invoices" element={<Invoices />} />
-          <Route path="registrations" element={<RoomAssignment />} />
-          <Route path="contracts" element={<Contracts />} />
-        </Route>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Reports />} />
+            <Route path="students" element={<Students />} />
+            <Route path="rooms" element={<Rooms />} />
+            <Route path="infrastructure" element={<Infrastructure />} />
+            <Route path="incidents" element={<Incidents />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="violations" element={<Violations />} />
+            <Route path="rules" element={<DormRules />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="invoices" element={<Invoices />} />
+            <Route path="registrations" element={<RoomAssignment />} />
+            <Route path="contracts" element={<Contracts />} />
+          </Route>
 
           <Route path="/student" element={<StudentLayout />}>
             <Route index element={<Navigate to="/student/rooms" replace />} />
@@ -71,17 +73,17 @@ function App() {
                 <h1 className="text-6xl font-black text-slate-300">404</h1>
                 <p className="text-slate-500 font-medium mt-2">Trang bạn tìm kiếm không tồn tại.</p>
                 <Link
-          to="/login"
-          className="inline-block mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-500 transition"
-        >
-          Quay về trang chính
-        </Link>
+                  to="/login"
+                  className="inline-block mt-6 px-6 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-500 transition"
+                >
+                  Quay về trang chính
+                </Link>
               </div>
             </div>
           } />
         </Routes>
       </BrowserRouter>
-  </>
+    </>
   );
 }
 

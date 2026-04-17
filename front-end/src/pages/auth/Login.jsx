@@ -2,12 +2,32 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
+import { useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 const Login = () => {
     const [formData, setFormData] = useState({ username: '', password: '' });
     const [errorMsg, setErrorMsg] = useState('');
     const [showPassword, setShowPassword] = useState(false); // State quản lý ẩn/hiện mật khẩu
     const navigate = useNavigate();
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const verifyStatus = urlParams.get('verify');
+
+        if (verifyStatus === 'success') {
+            toast.success('Xác nhận tài khoản thành công! Bạn có thể đăng nhập ngay bây giờ.', { duration: 5000 });
+        } else if (verifyStatus === 'already') {
+            toast.success('Tài khoản này đã được xác nhận từ trước.');
+        } else if (verifyStatus === 'expired') {
+            toast.error('Link xác nhận đã hết hạn hoặc không hợp lệ. Vui lòng thử đăng ký lại.');
+        }
+
+        // Xóa param khỏi URL cho đẹp
+        if (verifyStatus) {
+            window.history.replaceState(null, '', window.location.pathname);
+        }
+    }, []);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -124,7 +144,7 @@ const Login = () => {
                             </div>
 
                             <div className="text-sm">
-                                <a href="#" className="font-bold text-[#00529C] hover:text-blue-800 transition-colors">
+                                <a href="/forgot-password" className="font-bold text-[#00529C] hover:text-blue-800 transition-colors">
                                     Quên mật khẩu?
                                 </a>
                             </div>

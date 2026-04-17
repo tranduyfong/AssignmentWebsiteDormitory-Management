@@ -11,11 +11,11 @@ const Register = () => {
         password: '',
         confirmPassword: ''
     });
-    
+
     // State quản lý ẩn/hiện cho từng ô mật khẩu
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-    
+
     const [errorMsg, setErrorMsg] = useState('');
     const navigate = useNavigate();
 
@@ -37,7 +37,7 @@ const Register = () => {
             };
 
             await axiosClient.post('/auth/register', payload);
-            alert('Đăng ký thành công! Vui lòng đăng nhập.');
+            toast.success('Đăng ký thành công! Hệ thống đã gửi link kích hoạt đến email của bạn. Vui lòng kiểm tra hộp thư (cả mục Spam) để xác nhận.', { duration: 8000 });
             navigate('/login');
 
         } catch (error) {
