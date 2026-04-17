@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Lock, User, Mail, ShieldCheck, Eye, EyeOff } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
+import { toast } from 'react-hot-toast'; 
 
 const Register = () => {
     const [formData, setFormData] = useState({
