@@ -54,6 +54,8 @@ CREATE TABLE SinhVien (
     MaTK INT,
     MaPhong INT,
     HoTen VARCHAR(255) NOT NULL,
+    Khoa VARCHAR(100),      
+    KhoaHoc VARCHAR(20),
     Email VARCHAR(255),
     SDT VARCHAR(20) UNIQUE,
     CCCD VARCHAR(20) UNIQUE NOT NULL,
@@ -177,3 +179,12 @@ VALUES ('admin', '$2b$10$jA1ylkciUmJIqdbhiuYUO.lYePWB6ZVD6l9oBCfoQw/95C7IiRO2i',
 -- 2. Lấy MaTK vừa tạo để thêm vào bảng Admin (Hồ sơ hiển thị)
 INSERT INTO Admin (MaTK, HoTen) 
 VALUES (LAST_INSERT_ID(), 'Ban Quản lý');
+
+
+ALTER TABLE TaiKhoan ADD COLUMN TrangThaiXacNhan INT DEFAULT 0;
+ALTER TABLE TaiKhoan ADD COLUMN MaKhoiPhuc VARCHAR(10) DEFAULT NULL;
+ALTER TABLE TaiKhoan ADD COLUMN HanMaKhoiPhuc DATETIME DEFAULT NULL;
+
+ALTER TABLE SinhVien 
+ADD COLUMN Khoa VARCHAR(100) AFTER NgaySinh,
+ADD COLUMN KhoaHoc VARCHAR(20) AFTER Khoa; 

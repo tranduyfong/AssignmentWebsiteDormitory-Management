@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     User, Mail, Phone, ShieldCheck, Lock, Eye, EyeOff,
-    Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2, Users
+    Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2, Users, GraduationCap
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -183,7 +183,9 @@ const Profile = () => {
                                 {/* Các trường không thể sửa */}
                                 <InfoItem label="Họ và Tên" value={profile?.HoTen} icon={User} isReadOnly />
                                 <InfoItem label="Mã sinh viên" value={profile?.MaSV} icon={ShieldCheck} isReadOnly />
-                                <InfoItem label="Giới tính" value={profile?.GioiTinh === 1 ? 'Nam' : 'Nữ'} icon={Users} />
+                                <InfoItem label="Khoa" value={profile?.Khoa} icon={School} />
+                                <InfoItem label="Khóa" value={profile?.KhoaHoc} icon={GraduationCap} />
+
                                 <InfoItem label="Ngày sinh" value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} icon={Calendar} isReadOnly />
 
                                 {/* Các trường CÓ THỂ SỬA */}

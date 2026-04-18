@@ -98,8 +98,7 @@ exports.getRules = async (req, res) => {
 
 // 5. Thêm mới sinh viên (Admin tạo)
 exports.createStudent = async (req, res) => {
-    // Thêm gioiTinh và ngaySinh vào destructuring
-    const { msv, fullname, email, sdt, cccd, password, gioiTinh, ngaySinh } = req.body;
+    const { msv, fullname, email, sdt, cccd, password, gioiTinh, ngaySinh, khoa, khoaHoc } = req.body;
     const connection = await pool.getConnection();
 
     try {
@@ -119,10 +118,10 @@ exports.createStudent = async (req, res) => {
         );
         const maTK = resTK.insertId;
 
-        // Thêm thông tin sinh viên vào bảng SinhVien (Bổ sung cột GioiTinh, NgaySinh)
+        // Thêm thông tin sinh viên vào bảng SinhVien (Bổ sung Khoa, KhoaHoc)
         const querySV = `
-            INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, SDT, CCCD, GioiTinh, NgaySinh) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, SDT, CCCD, GioiTinh, NgaySinh, Khoa, KhoaHoc) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
 
         await connection.execute(querySV, [
@@ -132,8 +131,10 @@ exports.createStudent = async (req, res) => {
             email,
             sdt || null,
             cccd || null,
-            gioiTinh ?? 1, // Mặc định là 1 (Nam) nếu không gửi lên
-            ngaySinh || null
+            gioiTinh ?? 1,
+            ngaySinh || null,
+            khoa || null,     // Thêm giá trị khoa
+            khoaHoc || null   // Thêm giá trị khóa học
         ]);
 
         await connection.commit();
@@ -150,15 +151,15 @@ exports.createStudent = async (req, res) => {
 // 6. Cập nhật thông tin sinh viên (Giữ nguyên hoặc tối ưu)
 exports.updateStudent = async (req, res) => {
     const { id } = req.params; // Lấy MaSV từ URL
-    const { fullname, email, sdt, cccd, gioiTinh, ngaySinh } = req.body;
+    const { fullname, email, sdt, cccd, gioiTinh, ngaySinh, khoa, khoaHoc } = req.body;
 
     try {
         const query = `
             UPDATE SinhVien 
-            SET HoTen = ?, Email = ?, SDT = ?, CCCD = ?, GioiTinh = ?, NgaySinh = ?
+            SET HoTen = ?, Email = ?, SDT = ?, CCCD = ?, GioiTinh = ?, NgaySinh = ?, Khoa = ?, KhoaHoc = ?
             WHERE MaSV = ?
         `;
-        // Sử dụng ?? hoặc || null để tránh ghi đè dữ liệu cũ bằng giá trị rỗng không mong muốn
+        
         await pool.execute(query, [
             fullname,
             email,
@@ -166,6 +167,8 @@ exports.updateStudent = async (req, res) => {
             cccd || null,
             gioiTinh ?? 1,
             ngaySinh || null,
+            khoa || null,    // Cập nhật khoa
+            khoaHoc || null, // Cập nhật khóa học
             id
         ]);
         res.status(200).json({ message: 'Sửa thông tin sinh viên thành công!' });

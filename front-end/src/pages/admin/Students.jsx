@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Search, Edit, Trash2, UserPlus, Filter, 
-  Phone, CreditCard, School, X, Loader2, Eye, EyeOff, Calendar, Mail , ChevronLeft, ChevronRight 
+  Phone, CreditCard, School, X, Loader2, Eye, EyeOff, Calendar, Mail , ChevronLeft, ChevronRight ,Tag
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -26,7 +26,9 @@ const Students = () => {
     sdt: '',
     cccd: '',
     gioiTinh: 1,
-    ngaySinh: '', // Trường mới
+    ngaySinh: '',
+    khoa: '',    
+    khoaHoc: '',
     password: ''  
   });
 
@@ -69,6 +71,8 @@ const Students = () => {
         cccd: student.CCCD || '',
         gioiTinh: student.GioiTinh !== undefined ? student.GioiTinh : 1,
         ngaySinh: formatDateForInput(student.NgaySinh), // Gán ngày sinh vào form
+        khoa: student.Khoa || '',        // Gán dữ liệu khoa
+        khoaHoc: student.KhoaHoc || '',
         password: '' 
       });
     } else {
@@ -90,6 +94,8 @@ const Students = () => {
         cccd: formData.cccd,
         gioiTinh: formData.gioiTinh,
         ngaySinh: formData.ngaySinh, // Gửi ngày sinh
+        khoa: formData.khoa,       // Gửi khoa
+        khoaHoc: formData.khoaHoc,
         password: formData.password
       };
 
@@ -187,8 +193,8 @@ const Students = () => {
                 <th className="px-6 py-4">Mã SV</th>
                 <th className="px-6 py-4">Họ và Tên</th>
                 <th className="px-6 py-4">Ngày sinh</th>
-                <th className="px-6 py-4">Liên hệ / CCCD</th>
-                <th className="px-6 py-4">Email</th>
+                <th className="px-6 py-4">Liên hệ / Email</th>
+                <th className="px-6 py-4">Khoa & Khóa</th>
                 <th className="px-6 py-4 text-center">Phòng</th>
                 <th className="px-6 py-4 text-right">Thao tác</th>
               </tr>
@@ -219,9 +225,18 @@ const Students = () => {
                   </td>
                   <td className="px-6 py-4 text-xs font-medium">
                     <div className="flex items-center"><Phone size={12} className="mr-1 text-slate-400"/> {student.SDT || '---'}</div>
-                    <div className="flex items-center mt-1 mr-1"><CreditCard size={12} className="mr-1 text-slate-400"/>{student.CCCD}</div>
+                    <div className="flex items-center mt-1 text-slate-500 lowercase"><Mail size={12} className="mr-1 text-slate-400"/>{student.Email}</div>
                   </td>
-                  <td className="px-6 py-4 text-xs font-semibold text-slate-500 max-w-[150px] truncate">{student.Email}</td>
+                  <td className="px-6 py-4 text-xs">
+                    <div className="flex items-center text-slate-700 font-bold uppercase tracking-tight">
+                        <School size={12} className="mr-1 text-slate-400" />
+                        {student.Khoa || '---'}
+                    </div>
+                    <div className="flex items-center mt-1 text-slate-400 font-semibold italic">
+                        <Tag size={12} className="mr-1" />
+                        Khóa: {student.KhoaHoc || '---'}
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-center">
                     {student.TenPhong ? (
                       <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100 font-bold text-[11px]">
@@ -318,6 +333,23 @@ const Students = () => {
                   required
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#00529C] focus:bg-white transition-all font-semibold"
                   value={formData.fullname} onChange={(e) => setFormData({...formData, fullname: e.target.value})}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Khoa</label>
+                <input 
+                  placeholder="Ví dụ: Công nghệ thông tin"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#00529C] focus:bg-white transition-all font-semibold"
+                  value={formData.khoa} onChange={(e) => setFormData({...formData, khoa: e.target.value})}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Khóa</label>
+                <input 
+                  placeholder="Ví dụ: K65"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[#00529C] focus:bg-white transition-all font-semibold"
+                  value={formData.khoaHoc} onChange={(e) => setFormData({...formData, khoaHoc: e.target.value})}
                 />
               </div>
 
