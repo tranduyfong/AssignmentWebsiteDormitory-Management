@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 
 // 1. ĐĂNG KÝ TÀI KHOẢN & GỬI MAIL
 exports.register = async (req, res) => {
-    const { msv, fullname, email, password } = req.body;
+    const { msv, fullname, email, password, gioiTinh } = req.body;
     const connection = await pool.getConnection();
 
     try {
@@ -37,8 +37,8 @@ exports.register = async (req, res) => {
 
         const tempCCCD = `TEMP_${msv}`;
         await connection.execute(
-            'INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, CCCD) VALUES (?, ?, ?, ?, ?)',
-            [msv, maTK, fullname, email, tempCCCD]
+            'INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, CCCD, GioiTinh) VALUES (?, ?, ?, ?, ?, ?)',
+            [msv, maTK, fullname, email, tempCCCD, gioiTinh]
         );
 
         // --- TẠO TOKEN XÁC NHẬN VÀ GỬI MAIL ---

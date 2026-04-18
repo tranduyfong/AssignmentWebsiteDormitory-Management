@@ -26,6 +26,38 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
         waterNew: 0
     });
 
+    const autoFillOldNumbers = (roomId, selectedPeriod) => {
+        if (!roomId || !selectedPeriod) return;
+
+        // Chuyển period chọn (YYYY-MM) thành Date để so sánh
+        const currentSelection = new Date(selectedPeriod + "-01");
+
+        // Tìm trong danh sách 'data' (từ API trả về) bản ghi mới nhất của phòng này 
+        // nhưng phải có thời gian trước tháng đang chọn
+        const lastRecord = data
+            .filter(item => item.MaPhong === parseInt(roomId))
+            .filter(item => new Date(item.ThoiGian) < currentSelection)
+            .sort((a, b) => new Date(b.ThoiGian) - new Date(a.ThoiGian))[0];
+
+        if (lastRecord) {
+            setFormData(prev => ({
+                ...prev,
+                elecOld: lastRecord.ChiSoDienMoi,
+                waterOld: lastRecord.ChiSoNuocMoi
+            }));
+            // Thông báo nhỏ cho người dùng
+            toast.success(`Đã tự động lấy số cũ từ tháng ${new Date(lastRecord.ThoiGian).getMonth() + 1}`);
+        } else {
+            // Nếu không thấy (phòng mới chưa có dữ liệu tháng trước)
+            setFormData(prev => ({ ...prev, elecOld: 0, waterOld: 0 }));
+        }
+    };
+     useEffect(() => {
+        if (!editingId && isModalOpen) { // Chỉ tự điền khi Thêm mới, không tự điền khi đang Sửa
+            autoFillOldNumbers(formData.maPhong, formData.period);
+        }
+    }, [formData.maPhong, formData.period, isModalOpen, editingId, autoFillOldNumbers]);
+
     // --- 2. Reset về trang 1 khi tìm kiếm hoặc lọc ---
     useEffect(() => {
         setCurrentPage(1);

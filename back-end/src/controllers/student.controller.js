@@ -35,7 +35,7 @@ exports.getMyContracts = async (req, res) => {
             SELECT h.*, p.TenPhong 
             FROM HopDong h
             JOIN Phong p ON h.MaPhong = p.MaPhong
-            WHERE h.MaSV = ? AND h.TrangThai = 1
+            WHERE h.MaSV = ? 
         `;
         const [contracts] = await pool.execute(query, [maSV]);
         res.status(200).json(contracts);
