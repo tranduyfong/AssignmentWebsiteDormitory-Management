@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, Trash2, X, Save, User, Loader2, CreditCard, 
-  Search, Calendar, Filter, ChevronLeft, ChevronRight 
+  Search, Calendar, Filter, ChevronLeft, ChevronRight ,Info
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -35,7 +35,7 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
         maSV: '', 
         maPhong: '', 
         period: semesters[0], 
-        amount: 2000000 
+        amount: 0 
     });
 
     // --- 2. Reset về trang 1 khi tìm kiếm hoặc lọc ---
@@ -84,21 +84,25 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!formData.maSV || !formData.maPhong) return toast.error("Vui lòng chọn sinh viên");
-        
+        if (!formData.maSV) return toast.error("Vui lòng chọn sinh viên");
+        if (!formData.period) return toast.error("Vui lòng chọn học kỳ");
+
+        const loadingToast = toast.loading("Đang lập hóa đơn...");
         try {
             await axiosClient.post('/admin/invoices', {
                 maPhong: formData.maPhong,
                 maSV: formData.maSV,
+                maDienNuoc: null, // Tiền phòng không có mã điện nước
                 loaiHoaDon: 'Tiền phòng',
                 kyHoaDon: formData.period,
-                soTien: formData.amount
+                soTien: 0 // Gửi 0 vì Backend sẽ tự SELECT HopDong để tính tiền thực tế
             });
-            toast.success("Lập hóa đơn thành công");
+            
+            toast.success("Hệ thống đã tự động tính phí dựa trên hợp đồng và tạo hóa đơn thành công!", { id: loadingToast, duration: 4000 });
             setIsModalOpen(false);
             refresh();
         } catch (error) { 
-            toast.error(error.response?.data?.message || "Lỗi khi lưu"); 
+            toast.error(error.response?.data?.message || "Lỗi khi tạo hóa đơn tiền phòng", { id: loadingToast }); 
         }
     };
 
@@ -270,13 +274,6 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                                 <select required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" value={formData.period} onChange={e => setFormData({...formData, period: e.target.value})}>
                                     {semesters.map((s, index) => <option key={index} value={s}>{s}</option>)}
                                 </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Số tiền (VNĐ)</label>
-                                <div className="relative">
-                                    <input readOnly type="number" className="w-full px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl outline-none font-black text-slate-500 cursor-not-allowed" value={formData.amount} />
-                                    <CreditCard className="absolute right-3 top-2.5 text-blue-300" size={18} />
-                                </div>
                             </div>
                             <button type="submit" className="w-full py-4 bg-[#00529C] text-white rounded-xl font-bold uppercase text-[10px] shadow-lg shadow-blue-200 active:scale-95 transition-all">Xác nhận tạo hóa đơn</button>
                         </form>

@@ -169,76 +169,89 @@ exports.getAllUtilities = async (req, res) => {
 exports.createInvoice = async (req, res) => {
     const { maPhong, maSV, maDienNuoc, loaiHoaDon, kyHoaDon, soTien } = req.body;
     const ngayLap = new Date().toISOString().split('T')[0];
-
     const connection = await pool.getConnection();
+
     try {
         await connection.beginTransaction();
 
-        // LUỒNG 1: NẾU LÀ HÓA ĐƠN ĐIỆN NƯỚC -> CHIA ĐỀU CHO SINH VIÊN TRONG PHÒNG
-        if (loaiHoaDon === 'Điện nước' && maDienNuoc) {
-            // 1. Tìm danh sách sinh viên đang ở trong phòng này
-            const [students] = await connection.execute(
-                'SELECT MaSV FROM SinhVien WHERE MaPhong = ?', 
-                [maPhong]
+        let finalAmount = Number(soTien);
+
+        // --- LUỒNG 1: TIỀN PHÒNG (Tính toán tự động) ---
+        if (loaiHoaDon === 'Tiền phòng') {
+            // 1. Lấy thông tin hợp đồng hiện tại
+            const [contracts] = await connection.execute(
+                'SELECT NgayBatDau, NgayKetThuc FROM HopDong WHERE MaSV = ? AND TrangThai = 1 LIMIT 1',
+                [maSV]
             );
 
-            if (students.length === 0) {
-                throw new Error('Phòng này hiện không có sinh viên nào cư trú để chia hóa đơn!');
+            if (contracts.length === 0) throw new Error('Sinh viên không có hợp đồng hiệu lực!');
+
+            const contract = contracts[0];
+            const start = new Date(contract.NgayBatDau);
+            const end = new Date(contract.NgayKetThuc);
+
+            // 2. Tính TỔNG số tháng từ lúc bắt đầu đến lúc kết thúc mới
+            let totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+            if (end.getDate() > start.getDate()) totalMonths++;
+            if (totalMonths <= 0) totalMonths = 1;
+
+            const DON_GIA = 500000; // 500k/tháng 
+            const tongPhaiThuTheoHanHD = totalMonths * DON_GIA;
+
+            // 3. Tính xem sinh viên này đã có những hóa đơn "Tiền phòng" nào cho hợp đồng này chưa
+            const [billed] = await connection.execute(
+                `SELECT SUM(SoTien) as total FROM HoaDon 
+                 WHERE MaSV = ? AND LoaiHoaDon = 'Tiền phòng' AND NgayLap >= ?`,
+                [maSV, contract.NgayBatDau]
+            );
+
+            const daThu = Number(billed[0].total || 0);
+
+            // 4. Số tiền cần thu thêm (finalAmount)
+            finalAmount = tongPhaiThuTheoHanHD - daThu;
+
+            if (finalAmount <= 0) {
+                throw new Error('Sinh viên đã đóng đủ tiền phòng cho thời hạn hợp đồng này. Không cần tạo thêm!');
             }
+        }
 
-            // 2. Tính số tiền chia đầu người
-            const count = students.length;
-            const dividedAmount = Math.round(soTien / count); // Làm tròn số tiền
+        // --- LUỒNG 2: ĐIỆN NƯỚC (Chia đầu người trong phòng) ---
+        if (loaiHoaDon === 'Điện nước') {
+            if (!maDienNuoc) throw new Error('Thiếu mã chỉ số điện nước!');
 
-            // 3. Lặp qua danh sách SV để tạo từng hóa đơn
-            const insertInvoiceQuery = `
+            const [students] = await connection.execute('SELECT MaSV FROM SinhVien WHERE MaPhong = ?', [maPhong]);
+            if (students.length === 0) throw new Error('Phòng không có sinh viên ở!');
+
+            const dividedAmount = Math.round(finalAmount / students.length);
+
+            const queryBulk = `
                 INSERT INTO HoaDon (MaPhong, MaSV, MaDienNuoc, LoaiHoaDon, KyHoaDon, SoTien, TrangThaiThanhToan, NgayLap)
                 VALUES (?, ?, ?, ?, ?, ?, 0, ?)
             `;
 
             for (let sv of students) {
-                await connection.execute(insertInvoiceQuery, [
-                    maPhong, 
-                    sv.MaSV, 
-                    maDienNuoc, 
-                    'Điện nước', 
-                    kyHoaDon, 
-                    dividedAmount, 
-                    ngayLap
-                ]);
+                await connection.execute(queryBulk, [maPhong, sv.MaSV, maDienNuoc, 'Điện nước', kyHoaDon, dividedAmount, ngayLap]);
             }
 
-            // 4. Cập nhật trạng thái đã chốt cho bản ghi điện nước
-            await connection.execute(
-                'UPDATE DienNuoc SET TrangThaiChot = 1 WHERE MaDienNuoc = ?', 
-                [maDienNuoc]
-            );
-
+            await connection.execute('UPDATE DienNuoc SET TrangThaiChot = 1 WHERE MaDienNuoc = ?', [maDienNuoc]);
         } 
-        // LUỒNG 2: NẾU LÀ TIỀN PHÒNG HOẶC PHÍ KHÁC -> GIỮ NGUYÊN (TẠO 1 HÓA ĐƠN)
+        // --- LUỒNG 3: TIỀN PHÒNG & PHÍ KHÁC (Tạo 1 hóa đơn cho 1 người) ---
         else {
-            const queryHoaDon = `
+            const querySingle = `
                 INSERT INTO HoaDon (MaPhong, MaSV, MaDienNuoc, LoaiHoaDon, KyHoaDon, SoTien, TrangThaiThanhToan, NgayLap)
-                VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+                VALUES (?, ?, NULL, ?, ?, ?, 0, ?)
             `;
-            await connection.execute(queryHoaDon, [
-                maPhong, 
-                maSV, 
-                maDienNuoc || null, 
-                loaiHoaDon, 
-                kyHoaDon, 
-                soTien, 
-                ngayLap
-            ]);
+            // Luôn ghi nhãn loaiHoaDon (ví dụ: "Tiền phòng") gửi từ Frontend
+            await connection.execute(querySingle, [maPhong, maSV, loaiHoaDon, kyHoaDon, finalAmount, ngayLap]);
         }
 
         await connection.commit();
-        res.status(201).json({ message: 'Khởi tạo hóa đơn thành công!' });
+        res.status(201).json({ message: 'Tạo hóa đơn thành công!', soTien: finalAmount });
 
     } catch (error) {
         await connection.rollback();
-        console.error("Lỗi createInvoice:", error);
-        res.status(400).json({ message: error.message || 'Lỗi khi tạo hóa đơn.' });
+        console.error("Lỗi tạo hóa đơn:", error.message);
+        res.status(400).json({ message: error.message || 'Lỗi hệ thống.' });
     } finally {
         connection.release();
     }

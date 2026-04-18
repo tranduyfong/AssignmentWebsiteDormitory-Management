@@ -67,7 +67,7 @@ exports.approveRegistration = async (req, res) => {
 
         // Bước 5: (Tùy chọn) Tự động sinh Hợp đồng mới
         const ngayBatDau = new Date().toISOString().split('T')[0];
-        const ngayKetThuc = new Date(new Date().setMonth(new Date().getMonth() + 6)).toISOString().split('T')[0]; // Hợp đồng 6 tháng
+        const ngayKetThuc = new Date(new Date().setMonth(new Date().getMonth() + 5)).toISOString().split('T')[0]; // Hợp đồng 6 tháng
         await connection.execute(
             'INSERT INTO HopDong (MaSV, MaPhong, NgayBatDau, NgayKetThuc, TrangThai) VALUES (?, ?, ?, ?, 1)',
             [maSV, maPhong, ngayBatDau, ngayKetThuc]
