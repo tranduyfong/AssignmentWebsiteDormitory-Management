@@ -54,6 +54,15 @@ exports.terminateContract = async (req, res) => {
         const contract = contracts[0];
         if (contract.TrangThai === 0) throw new Error('Hợp đồng này đã được chấm dứt từ trước!');
 
+        const [unpaid] = await connection.execute(
+            'SELECT COUNT(*) as count FROM HoaDon WHERE MaSV = ? AND TrangThaiThanhToan = 0',
+            [contract.MaSV]
+        );
+
+        if (unpaid[0].count > 0) {
+            throw new Error(`Sinh viên hiện vẫn còn ${unpaid[0].count} hóa đơn chưa thanh toán. Phải hoàn thành nghĩa vụ tài chính trước khi chấm dứt hợp đồng!`);
+        }
+
         // Bước 2: Cập nhật trạng thái hợp đồng -> 0 (Hết hạn/Chấm dứt)
         await connection.execute('UPDATE HopDong SET TrangThai = 0 WHERE MaHopDong = ?', [id]);
 

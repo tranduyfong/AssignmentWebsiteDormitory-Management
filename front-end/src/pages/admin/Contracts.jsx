@@ -54,7 +54,7 @@ const Contracts = () => {
 
   const handleExtend = async (contract) => {
     const currentEndDate = new Date(contract.NgayKetThuc);
-    const newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + 6))
+    const newEndDate = new Date(currentEndDate.setMonth(currentEndDate.getMonth() + 5))
                         .toISOString().split('T')[0];
 
     if (window.confirm(`Gia hạn hợp đồng cho ${contract.TenSinhVien} đến ngày ${new Date(newEndDate).toLocaleDateString('vi-VN')}?`)) {

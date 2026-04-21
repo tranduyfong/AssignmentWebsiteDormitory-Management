@@ -91,7 +91,7 @@ const Rooms = () => {
       setEditingRoom(null);
       setFormData({
         MaPhong: '',
-        MaToaNha: buildings.length > 0 ? buildings[0].MaToaNha : '',
+        MaToaNha: '',
         TenPhong: '',
         LoaiPhong: 'Phòng 4 người',
         SucChua: 4,

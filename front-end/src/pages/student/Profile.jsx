@@ -21,21 +21,32 @@ const Profile = () => {
         email: '',
         sdt: '',
         cccd: '',
-        gioiTinh: 1 // Thêm state này, mặc định là 1 (Nam)
+        gioiTinh: 1,
+        ngaySinh: '',
+        khoa: '',
+        khoaHoc: ''
     });
+
+    const formatDateForInput = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toISOString().split('T')[0];
+    };
 
     const fetchProfile = async () => {
         try {
             setIsLoading(true);
             const data = await axiosClient.get('/student/profile');
             setProfile(data);
-            // Đồng bộ dữ liệu vào form sửa
-            setEditFormData({
-                email: data.Email || '',
-                sdt: data.SDT || '',
-                cccd: data.CCCD || '',
-                gioiTinh: data.GioiTinh !== undefined ? data.GioiTinh : 1 // Lấy giới tính từ DB
-            });
+             setEditFormData({
+            email: String(data.Email || ''),     
+            sdt: String(data.SDT || ''),         
+            cccd: String(data.CCCD || ''),       
+            gioiTinh: data.GioiTinh ?? 1,        
+            ngaySinh: data.NgaySinh ? formatDateForInput(data.NgaySinh) : '',
+            khoa: String(data.Khoa || ''),       
+            khoaHoc: String(data.KhoaHoc || '') 
+        });
         } catch (error) {
             toast.error("Không thể tải thông tin cá nhân");
         } finally {
@@ -183,12 +194,34 @@ const Profile = () => {
                                 {/* Các trường không thể sửa */}
                                 <InfoItem label="Họ và Tên" value={profile?.HoTen} icon={User} isReadOnly />
                                 <InfoItem label="Mã sinh viên" value={profile?.MaSV} icon={ShieldCheck} isReadOnly />
-                                <InfoItem label="Khoa" value={profile?.Khoa} icon={School} />
-                                <InfoItem label="Khóa" value={profile?.KhoaHoc} icon={GraduationCap} />
-
-                                <InfoItem label="Ngày sinh" value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} icon={Calendar} isReadOnly />
+                            
 
                                 {/* Các trường CÓ THỂ SỬA */}
+                                 <EditableItem
+                                    label="Ngày sinh"
+                                    type="date"
+                                    value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
+                                    icon={Calendar}
+                                    isEditing={isEditing}
+                                    inputValue={editFormData.ngaySinh}
+                                    onChange={(val) => setEditFormData({ ...editFormData, ngaySinh: val })}
+                                />
+                                <EditableItem
+                                    label="Khoa"
+                                    value={profile?.Khoa}
+                                    icon={School}
+                                    isEditing={isEditing}
+                                    inputValue={editFormData.khoa}
+                                    onChange={(val) => setEditFormData({ ...editFormData, khoa: val })}
+                                />
+                                <EditableItem
+                                    label="Khóa"
+                                    value={profile?.KhoaHoc}
+                                    icon={GraduationCap}
+                                    isEditing={isEditing}
+                                    inputValue={editFormData.khoaHoc}
+                                    onChange={(val) => setEditFormData({ ...editFormData, khoaHoc: val })}
+                                />
                                 <EditableSelect
                                     label="Giới tính"
                                     value={profile?.GioiTinh === 1 ? 'Nam' : (profile?.GioiTinh === 0 ? 'Nữ' : 'Chưa cập nhật')}
@@ -276,7 +309,7 @@ const InfoItem = ({ label, value, icon: Icon }) => (
 );
 
 // Component cho các trường có thể cập nhật
-const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChange }) => (
+const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChange, type = "text" }) => (
     <div className="space-y-1.5">
         <div className="flex items-center text-slate-400 gap-1.5">
             <Icon size={14} />
@@ -284,7 +317,8 @@ const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChang
         </div>
         {isEditing ? (
             <input
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 transition-all "
+                type={type}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 transition-all"
                 value={inputValue}
                 onChange={(e) => onChange(e.target.value)}
             />

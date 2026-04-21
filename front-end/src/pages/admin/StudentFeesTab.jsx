@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, Trash2, X, Save, User, Loader2, CreditCard, 
-  Search, Calendar, Filter, ChevronLeft, ChevronRight ,Info
+  Search, Calendar, Filter, ChevronLeft, ChevronRight ,Info,ChevronDown
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -24,6 +24,8 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
     const [isFetching, setIsFetching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('Tất cả');
+    const [studentSearch, setStudentSearch] = useState(''); // State tìm kiếm riêng trong Modal
+    const [selectedStudent, setSelectedStudent] = useState(null)
 
     // --- 1. State cho Phân trang ---
     const [currentPage, setCurrentPage] = useState(1);
@@ -55,12 +57,19 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
             setIsFetching(false);
         }
     };
+    const filteredStudentList = useMemo(() => {
+        if (!studentSearch) return studentList;
+        return studentList.filter(s => 
+            s.HoTen.toLowerCase().includes(studentSearch.toLowerCase()) ||
+            s.MaSV.toLowerCase().includes(studentSearch.toLowerCase()) ||
+            s.TenPhong.toLowerCase().includes(studentSearch.toLowerCase())
+        );
+    }, [studentList, studentSearch]);
 
-    const handleSelectStudent = (msv) => {
-        const student = studentList.find(s => s.MaSV === msv);
-        if (student) {
-            setFormData({ ...formData, maSV: msv, maPhong: student.MaPhong });
-        }
+    const handleSelect = (student) => {
+        setSelectedStudent(student);
+        setFormData({ ...formData, maSV: student.MaSV, maPhong: student.MaPhong });
+        setStudentSearch(''); // Reset search sau khi chọn
     };
 
     const filteredData = useMemo(() => {
@@ -253,29 +262,123 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden p-8 animate-in zoom-in-95">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-slate-800 uppercase text-xs">Lập phí phòng cá nhân</h3>
-                            <button onClick={() => setIsModalOpen(false)}><X size={18}/></button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px] animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+                        
+                        {/* Header Modal */}
+                        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 className="font-bold text-slate-800 text-lg">Lập phí phòng</h3>
+                            
+                            </div>
+                            <button 
+                                onClick={() => {setIsModalOpen(false); setSelectedStudent(null);}} 
+                                className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200"
+                            >
+                                <X size={20} className="text-slate-400" />
+                            </button>
                         </div>
-                        <form onSubmit={handleSave} className="space-y-5">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Chọn sinh viên</label>
-                                <select required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" value={formData.maSV} onChange={e => handleSelectStudent(e.target.value)}>
-                                    <option value="">-- Danh sách sinh viên nội trú --</option>
-                                    {studentList.map(sv => (
-                                        <option key={sv.MaSV} value={sv.MaSV}>{sv.MaSV} - {sv.HoTen} (P.{sv.TenPhong})</option>
-                                    ))}
-                                </select>
+
+                        <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto">
+                            
+                            {/* PHẦN CHỌN SINH VIÊN THÔNG MINH */}
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
+                                    Chọn sinh viên
+                                </label>
+                                
+                                {selectedStudent ? (
+                                    /* Hiển thị khi ĐÃ CHỌN */
+                                    <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-2xl animate-in slide-in-from-top-2">
+                                        <div className="flex items-center gap-3">
+                                    
+                                            <div>
+                                                <div className="font-bold text-slate-900">{selectedStudent.HoTen}</div>
+                                                <div className="text-xs text-blue-600 font-semibold">MSV: {selectedStudent.MaSV} • Phòng: {selectedStudent.TenPhong}</div>
+                                            </div>
+                                        </div>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setSelectedStudent(null)}
+                                            className="text-xs font-bold text-red-500 hover:underline"
+                                        >
+                                            Thay đổi
+                                        </button>
+                                    </div>
+                                ) : (
+                                    /* Hiển thị Ô TÌM KIẾM khi CHƯA CHỌN */
+                                    <div className="space-y-3">
+                                        <div className="relative">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input 
+                                                type="text"
+                                                placeholder="Tìm tên, mã sinh viên hoặc phòng..."
+                                                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#00529C] transition-all text-sm font-medium"
+                                                value={studentSearch}
+                                                onChange={(e) => setStudentSearch(e.target.value)}
+                                            />
+                                        </div>
+
+                                        {/* Danh sách kết quả lọc */}
+                                        <div className="border border-slate-100 rounded-2xl max-h-48 overflow-y-auto bg-slate-50/30 divide-y divide-slate-100">
+                                            {isFetching ? (
+                                                <div className="p-10 text-center"><Loader2 size={20} className="animate-spin mx-auto text-slate-300" /></div>
+                                            ) : filteredStudentList.length > 0 ? (
+                                                filteredStudentList.map(sv => (
+                                                    <div 
+                                                        key={sv.MaSV}
+                                                        onClick={() => handleSelect(sv)}
+                                                        className="flex items-center justify-between p-3 hover:bg-white cursor-pointer transition-all group"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <div>
+                                                                <div className="text-sm font-bold text-slate-700">{sv.HoTen}</div>
+                                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">MSV: {sv.MaSV}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="text-[10px] font-black text-[#00529C] bg-blue-50 px-2 py-1 rounded-md">P.{sv.TenPhong}</div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="p-6 text-center text-slate-400 text-xs italic">Không tìm thấy sinh viên phù hợp</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Học kỳ thu phí</label>
-                                <select required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" value={formData.period} onChange={e => setFormData({...formData, period: e.target.value})}>
-                                    {semesters.map((s, index) => <option key={index} value={s}>{s}</option>)}
-                                </select>
+
+                            {/* CHỌN HỌC KỲ */}
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
+                                    Học kỳ
+                                </label>
+                                <div className="relative group"> {/* Thêm relative ở đây */}
+        <select 
+            required 
+            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#00529C] font-bold text-slate-700 text-sm appearance-none cursor-pointer transition-all" 
+            value={formData.period} 
+            onChange={e => setFormData({...formData, period: e.target.value})}
+        >
+            {semesters.map((s, index) => <option key={index} value={s}>{s}</option>)}
+        </select>
+        
+        {/* ICON CHEVRON XUỐNG */}
+        <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#00529C] transition-colors">
+            <ChevronDown size={18} />
+        </div>
+    </div>
                             </div>
-                            <button type="submit" className="w-full py-4 bg-[#00529C] text-white rounded-xl font-bold uppercase text-[10px] shadow-lg shadow-blue-200 active:scale-95 transition-all">Xác nhận tạo hóa đơn</button>
+
+                            {/* NÚT XÁC NHẬN */}
+                            <div className="pt-2">
+                                <button 
+                                    type="submit" 
+                                    disabled={!selectedStudent}
+                                    className="w-full py-4 bg-[#00529C] text-white rounded-[20px] font-bold uppercase text-xs shadow-xl shadow-blue-200 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                >
+                                    Xác nhận lập hóa đơn
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

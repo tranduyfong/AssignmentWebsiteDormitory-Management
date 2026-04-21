@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import {
     Plus, Trash2, Receipt, Zap, Droplets,
     Calendar, X, Save, CheckCircle2, Loader2, Home, Edit, Search, Filter,
-    ChevronLeft, ChevronRight // Thêm icon điều hướng
+    ChevronLeft, ChevronRight ,ChevronDown
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -12,6 +12,8 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
     const [editingId, setEditingId] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('Tất cả');
+    const [isRoomDropdownOpen, setIsRoomDropdownOpen] = useState(false);
+    const [roomSearch, setRoomSearch] = useState('');
 
     // --- 1. State cho Phân trang ---
     const [currentPage, setCurrentPage] = useState(1);
@@ -83,7 +85,7 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
     const handleOpenAddModal = () => {
         setEditingId(null);
         setFormData({
-            maPhong: rooms[0]?.MaPhong || '',
+            maPhong: '',
             period: new Date().toISOString().slice(0, 7),
             elecOld: 0,
             elecNew: 0,
@@ -232,7 +234,9 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
                                 <tr key={f.MaDienNuoc} className="hover:bg-slate-50/50 transition-colors">
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-slate-900">Phòng {f.TenPhong}</div>
-                                        <div className="text-[10px] text-slate-400 uppercase">{f.TenToaNha}</div>
+                                         <div className="text-[10px] text-slate-400 uppercase font-semibold">
+        {f.TenKhu} - {f.TenToaNha}
+    </div>
                                     </td>
                                     <td className="px-6 py-4 text-slate-500 text-xs font-semibold">
                                         {new Date(f.ThoiGian).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })}
@@ -329,28 +333,84 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
                         </div>
 
                         <form onSubmit={handleSave} className="p-8 space-y-5 text-sm font-semibold">
-                            <div className="space-y-1.5">
+                            <div className="space-y-1.5 relative">
                                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1 flex items-center">
                                     <Home size={12} className="mr-1" /> Chọn phòng
                                 </label>
-                                <select
-                                    required
-                                    disabled={editingId !== null}
-                                    className={`w-full px-4 py-2.5 border rounded-xl outline-none transition-all font-bold 
-            ${editingId !== null
-                                            ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                                            : 'bg-slate-50 border-slate-200 focus:border-blue-500 text-[#00529C]'
-                                        }`}
-                                    value={formData.maPhong}
-                                    onChange={(e) => setFormData({ ...formData, maPhong: e.target.value })}
-                                >
-                                    <option value="">-- Chọn một phòng --</option>
-                                    {rooms.map((room) => (
-                                        <option key={room.MaPhong} value={room.MaPhong}>
-                                            Phòng {room.TenPhong} ({room.TenToaNha})
-                                        </option>
-                                    ))}
-                                </select>
+                                 <button
+        type="button"
+        disabled={editingId !== null}
+        onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
+        className={`w-full flex items-center justify-between px-4 py-2.5 border rounded-xl transition-all font-bold text-sm
+            ${editingId !== null 
+                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed' 
+                : 'bg-slate-50 border-slate-200 hover:border-blue-400 text-slate-700'
+            }`}
+    >
+        <span className={`truncate ${!formData.maPhong ? 'text-slate-400 font-medium' : 'text-slate-700'}`}>
+    {formData.maPhong 
+        ? rooms.find(r => r.MaPhong == formData.maPhong)?.TenKhu + " - " + rooms.find(r => r.MaPhong == formData.maPhong)?.TenToaNha + " - Phòng " + rooms.find(r => r.MaPhong == formData.maPhong)?.TenPhong
+        : "Chọn phòng"}
+</span>
+         <ChevronDown 
+        size={18} 
+        className={`transition-transform duration-300 text-slate-400 ${isRoomDropdownOpen ? 'rotate-180' : 'rotate-0'}`} 
+    />
+    </button>
+
+    {/* Menu Dropdown */}
+    {isRoomDropdownOpen && editingId === null && (
+        <div className="absolute z-[110] w-full mt-2 bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            {/* Thanh tìm kiếm nhanh trong dropdown */}
+            <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                    <input 
+                        type="text"
+                        placeholder="Tìm Khu, Tòa hoặc Số phòng..."
+                        className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-xs outline-none focus:border-blue-500 transition-all"
+                        value={roomSearch}
+                        onChange={(e) => setRoomSearch(e.target.value)}
+                        autoFocus
+                    />
+                </div>
+            </div>
+
+            {/* Danh sách phòng có Scroll */}
+            <div className="max-h-60 overflow-y-auto scrollbar-thin scrollbar-thumb-slate-200">
+                {[...rooms]
+                    .filter(r => 
+                        r.TenPhong.toLowerCase().includes(roomSearch.toLowerCase()) ||
+                        r.TenToaNha.toLowerCase().includes(roomSearch.toLowerCase()) ||
+                        r.TenKhu?.toLowerCase().includes(roomSearch.toLowerCase())
+                    )
+                    .sort((a, b) => a.TenKhu.localeCompare(b.TenKhu) || a.TenToaNha.localeCompare(b.TenToaNha))
+                    .map((room) => (
+                        <div
+                            key={room.MaPhong}
+                            className={`px-4 py-3 text-xs cursor-pointer transition-all flex items-center justify-between
+                                ${formData.maPhong == room.MaPhong ? 'bg-blue-50 text-[#00529C]' : 'hover:bg-slate-50 text-slate-600'}`}
+                            onClick={() => {
+                                setFormData({ ...formData, maPhong: room.MaPhong });
+                                setIsRoomDropdownOpen(false);
+                                setRoomSearch('');
+                            }}
+                        >
+                            <div className="flex flex-col">
+                                <span className="font-bold">Phòng {room.TenPhong}</span>
+                                <span className="text-[10px] opacity-60 uppercase">{room.TenKhu} - {room.TenToaNha}</span>
+                            </div>
+                            {formData.maPhong == room.MaPhong && <CheckCircle2 size={14} />}
+                        </div>
+                    ))}
+                
+                {/* Trường hợp không tìm thấy */}
+                {rooms.length > 0 && roomSearch !== '' && ![...rooms].some(r => r.TenPhong.includes(roomSearch)) && (
+                    <div className="p-4 text-center text-slate-400 text-xs italic">Không tìm thấy phòng</div>
+                )}
+            </div>
+        </div>
+    )}
                             </div>
 
                             <div className="space-y-6">

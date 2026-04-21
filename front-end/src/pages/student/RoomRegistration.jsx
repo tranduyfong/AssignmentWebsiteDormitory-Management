@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Info, CheckCircle2 } from 'lucide-react';
+import { Send, Info, CheckCircle2, Loader2,ChevronDown  } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 
 const RoomRegistration = () => {
@@ -8,6 +8,8 @@ const RoomRegistration = () => {
 
     // Lấy thông tin user từ localStorage
     const [userInfo, setUserInfo] = useState({});
+     const [zones, setZones] = useState([]); 
+    const [isLoadingZones, setIsLoadingZones] = useState(true);
 
     const [formData, setFormData] = useState({
         hocKy: 'Kỳ I (2025-2026)',
@@ -21,6 +23,19 @@ const RoomRegistration = () => {
         if (storedUser) {
             setUserInfo(JSON.parse(storedUser));
         }
+        const fetchZones = async () => {
+            try {
+                setIsLoadingZones(true);
+
+                const res = await axiosClient.get('/student/zones'); 
+                setZones(res);
+            } catch (error) {
+                console.error("Lỗi lấy danh sách khu:", error);
+            } finally {
+                setIsLoadingZones(false);
+            }
+        };
+        fetchZones();
     }, []);
 
     const handleSubmit = async (e) => {
@@ -110,18 +125,31 @@ const RoomRegistration = () => {
                     <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wider">2. Nguyện vọng xếp phòng</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Chọn Khu vực</label>
-                            <select
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none font-medium text-slate-700"
-                                value={formData.nguyenVongKhu}
-                                onChange={(e) => setFormData({ ...formData, nguyenVongKhu: e.target.value })}
-                                required
-                            >
-                                <option value="">-- Chọn khu --</option>
-                                <option value="Khu A">Khu A</option>
-                                <option value="Khu B">Khu B</option>
-                            </select>
-                        </div>
+    <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Chọn Khu vực</label>
+    <div className="relative">
+        <select
+            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#00529C] outline-none font-medium text-slate-700 transition-all" // Đã xóa appearance-none
+            value={formData.nguyenVongKhu}
+            onChange={(e) => setFormData({ ...formData, nguyenVongKhu: e.target.value })}
+            required
+            disabled={isLoadingZones}
+        >
+            <option value="">{isLoadingZones ? "Đang tải danh sách..." : "-- Chọn khu --"}</option>
+            {zones.map((zone) => (
+                <option key={zone.MaKhu} value={zone.TenKhu}>
+                    {zone.TenKhu}
+                </option>
+            ))}
+        </select>
+        
+        {/* Chỉ hiện Loader khi đang tải, khi tải xong để trình duyệt tự hiện mũi tên */}
+        {isLoadingZones && (
+            <div className="absolute right-3 top-2.5 pointer-events-none">
+                <Loader2 size={18} className="animate-spin text-slate-400" />
+            </div>
+        )}
+    </div>
+</div>
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Loại phòng</label>
                             <select

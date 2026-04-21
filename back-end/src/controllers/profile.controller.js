@@ -35,20 +35,40 @@ exports.changePassword = async (req, res) => {
 
 // 2. Cập nhật thông tin cá nhân (Dành cho Sinh viên)
 exports.updateMyProfile = async (req, res) => {
-    const maSV = req.user.id;
-    // Bổ sung gioiTinh vào destructuring
-    const { sdt, cccd, email, gioiTinh } = req.body;
+    const maSV = req.user.id; // Lấy từ middleware verifyToken
+    
+    // 1. Lấy thêm các trường mới từ req.body
+    const { sdt, cccd, email, gioiTinh, ngaySinh, khoa, khoaHoc } = req.body;
 
     try {
-        await pool.execute(
-            // Bổ sung cập nhật cột GioiTinh
-            'UPDATE SinhVien SET SDT = ?, CCCD = ?, Email = ?, GioiTinh = ? WHERE MaSV = ?',
-            [sdt, cccd, email, gioiTinh, maSV]
-        );
+        // 2. Cập nhật câu lệnh SQL bổ sung NgaySinh, Khoa, KhoaHoc
+        const query = `
+            UPDATE SinhVien 
+            SET SDT = ?, 
+                CCCD = ?, 
+                Email = ?, 
+                GioiTinh = ?, 
+                NgaySinh = ?, 
+                Khoa = ?, 
+                KhoaHoc = ? 
+            WHERE MaSV = ?
+        `;
+
+        await pool.execute(query, [
+            sdt || null,
+            cccd || null,
+            email || null,
+            gioiTinh ?? 1,      // Nếu không có thì mặc định là Nam (1)
+            ngaySinh || null,   // Định dạng YYYY-MM-DD
+            khoa || null,
+            khoaHoc || null,
+            maSV
+        ]);
+
         res.status(200).json({ message: 'Cập nhật thông tin cá nhân thành công.' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi cập nhật thông tin.' });
+        console.error("Lỗi Update Profile:", error);
+        res.status(500).json({ message: 'Lỗi máy chủ khi cập nhật thông tin.' });
     }
 };
 

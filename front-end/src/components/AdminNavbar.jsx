@@ -15,10 +15,6 @@ const AdminNavbar = ({ setSidebarOpen, isSidebarOpen, user }) => {
       </div>
 
       <div className="flex items-center space-x-6">
-        <div className="flex items-center space-x-2">
-            <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Bell size={22} /></button>
-            <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Settings size={22} /></button>
-        </div>
         <div className="flex items-center bg-slate-50 py-1.5 px-4 rounded-2xl border border-slate-100">
           <div className="text-right mr-4 hidden sm:block">
             <p className="text-sm font-black text-slate-900 leading-none">Admin</p>

@@ -24,7 +24,14 @@ exports.getRoomList = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi lấy danh sách phòng.' });
     }
 };
-
+exports.getZones = async (req, res) => {
+    try {
+        const [zones] = await pool.execute('SELECT MaKhu, TenKhu FROM Khu');
+        res.status(200).json(zones);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi khi tải danh sách Khu.' });
+    }
+};
 // 1. Lấy danh sách hợp đồng của sinh viên
 exports.getMyContracts = async (req, res) => {
     try {

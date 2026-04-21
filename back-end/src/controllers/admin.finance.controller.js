@@ -150,10 +150,12 @@ exports.getAllUtilities = async (req, res) => {
             SELECT 
                 dn.*, 
                 p.TenPhong, 
-                t.TenToaNha
+                t.TenToaNha,
+                k.TenKhu
             FROM DienNuoc dn
             JOIN Phong p ON dn.MaPhong = p.MaPhong
             JOIN ToaNha t ON p.MaToaNha = t.MaToaNha
+            JOIN Khu k ON t.MaKhu = k.MaKhu 
             ORDER BY dn.ThoiGian DESC, p.TenPhong ASC
         `;
         
@@ -196,22 +198,31 @@ exports.createInvoice = async (req, res) => {
             if (totalMonths <= 0) totalMonths = 1;
 
             const DON_GIA = 500000; // 500k/tháng 
-            const tongPhaiThuTheoHanHD = totalMonths * DON_GIA;
+            const tongTienPhaiLap = totalMonths * DON_GIA;
 
             // 3. Tính xem sinh viên này đã có những hóa đơn "Tiền phòng" nào cho hợp đồng này chưa
-            const [billed] = await connection.execute(
-                `SELECT SUM(SoTien) as total FROM HoaDon 
+            const [billedStats] = await connection.execute(
+                `SELECT 
+                    SUM(SoTien) as totalBilled,
+                    COUNT(CASE WHEN TrangThaiThanhToan = 0 THEN 1 END) as unpaidInvoices
+                 FROM HoaDon 
                  WHERE MaSV = ? AND LoaiHoaDon = 'Tiền phòng' AND NgayLap >= ?`,
                 [maSV, contract.NgayBatDau]
             );
 
-            const daThu = Number(billed[0].total || 0);
+            const soTienDaLap = Number(billedStats[0].totalBilled || 0);
+            const soHoaDonChuaThanhToan = Number(billedStats[0].unpaidInvoices || 0);
 
-            // 4. Số tiền cần thu thêm (finalAmount)
-            finalAmount = tongPhaiThuTheoHanHD - daThu;
+
+            finalAmount = tongTienPhaiLap - soTienDaLap;
+
+
 
             if (finalAmount <= 0) {
-                throw new Error('Sinh viên đã đóng đủ tiền phòng cho thời hạn hợp đồng này. Không cần tạo thêm!');
+                if (soHoaDonChuaThanhToan > 0) {
+                    throw new Error('Sinh viên này hiện đang có hóa đơn tiền phòng chưa thanh toán.');
+                }
+                throw new Error('Sinh viên đã được lập hóa đơn đủ cho toàn bộ thời hạn hợp đồng hiện tại.');
             }
         }
 
