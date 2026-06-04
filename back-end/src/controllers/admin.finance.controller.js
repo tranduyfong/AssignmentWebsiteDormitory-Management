@@ -222,7 +222,7 @@ exports.createInvoice = async (req, res) => {
                 if (soHoaDonChuaThanhToan > 0) {
                     throw new Error('Sinh viên này hiện đang có hóa đơn tiền phòng chưa thanh toán.');
                 }
-                throw new Error('Sinh viên đã được lập hóa đơn đủ cho toàn bộ thời hạn hợp đồng hiện tại.');
+                throw new Error('Sinh viên đã được lập hóa đơn tiền phòng đủ cho toàn bộ thời hạn hợp đồng hiện tại.');
             }
         }
 

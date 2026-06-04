@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, CreditCard, CheckCircle2, Clock, Home, Zap, 
-  Receipt, Calendar, ChevronLeft, ChevronRight 
+  Receipt, Calendar, ChevronLeft, ChevronRight , Banknote, Loader2
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
+import { toast } from 'react-hot-toast';
 
 const Invoices = () => {
   const [invoices, setInvoices] = useState([]);
@@ -11,6 +12,7 @@ const Invoices = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('Tất cả');
   const [filterType, setFilterType] = useState('Tất cả');
+  const [isProcessing, setIsProcessing] = useState(null); 
 
   // --- 1. State cho Phân trang ---
   const [currentPage, setCurrentPage] = useState(1);
@@ -42,6 +44,21 @@ const Invoices = () => {
   useEffect(() => {
     fetchInvoices();
   }, []);
+
+   const handleConfirmCash = async (id) => {
+    if (!window.confirm("Xác nhận đã nhận tiền mặt cho hóa đơn này?")) return;
+
+    try {
+      setIsProcessing(id);
+      const res = await axiosClient.put(`/admin/invoices/${id}/confirm-cash`);
+      toast.success(res.message || "Đã xác nhận thanh toán tiền mặt!");
+      fetchInvoices(); // Tải lại dữ liệu để cập nhật trạng thái và thống kê
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Lỗi khi xác nhận thanh toán");
+    } finally {
+      setIsProcessing(null);
+    }
+  };
 
   // --- 2. Reset về trang 1 khi thay đổi bộ lọc ---
   useEffect(() => {
@@ -135,13 +152,15 @@ const Invoices = () => {
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                 <th className="px-6 py-4">Mã Hóa Đơn</th>
-                <th className="px-6 py-4">Kỳ Hóa Đơn</th>
                 <th className="px-6 py-4">Sinh viên</th>
+                <th className="px-6 py-4">Kỳ Hóa Đơn</th>
                 <th className="px-6 py-4">Số tiền thu</th>
                 <th className="px-6 py-4">Loại phí</th>
-                <th className="px-6 py-4">Phòng</th>
                 <th className="px-6 py-4">Ngày tạo</th>
+                <th className="px-6 py-4">Phương thức</th> 
                 <th className="px-6 py-4 text-center">Tình trạng</th>
+                
+                <th className="px-6 py-4 text-right">Thao tác</th> 
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -153,11 +172,12 @@ const Invoices = () => {
                 currentItems.map((inv) => (
                   <tr key={inv.MaHoaDon} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4 font-bold text-slate-900">HD{inv.MaHoaDon}</td>
-                    <td className="px-6 py-4 font-semibold text-blue-600">{inv.KyHoaDon}</td>
+                   
                     <td className="px-6 py-4">
                       <div className="font-bold text-slate-800">{inv.TenSinhVien}</div>
                       <div className="text-[10px] font-bold text-blue-500 uppercase">MSV: {inv.MaSV}</div>
                     </td>
+                     <td className="px-6 py-4 font-semibold text-blue-600">{inv.KyHoaDon}</td>
                     <td className="px-6 py-4 font-black text-slate-900 whitespace-nowrap">
                       {formatCurrency(inv.SoTien)}
                     </td>
@@ -174,19 +194,47 @@ const Invoices = () => {
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center font-semibold text-slate-600">
-                        <Home size={14} className="mr-1.5 text-slate-300" /> {inv.TenPhong}
-                      </div>
-                    </td>
                     <td className="px-6 py-4 text-slate-500 text-xs">
                       <div className="flex items-center">
                         <Calendar size={13} className="mr-1.5 opacity-60" />
                         {new Date(inv.NgayLap).toLocaleDateString('vi-VN')}
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+  {inv.TrangThaiThanhToan === 1 ? (
+    <div className="flex items-center justify-center">
+      {inv.PhuongThucThanhToan === 'VNPay' ? (
+        <span className="flex items-center text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded-md border border-blue-100 uppercase">
+          <CreditCard size={12} className="mr-1" /> VNPay
+        </span>
+      ) : (
+        <span className="flex items-center text-[10px] font-bold text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 uppercase">
+          <Banknote size={12} className="mr-1" /> Tiền mặt
+        </span>
+      )}
+    </div>
+  ) : (
+    <div className="text-center text-slate-300">---</div>
+  )}
+</td>
                     <td className="px-6 py-4 text-center">
                       <StatusBadge status={inv.TrangThaiThanhToan === 1 ? 'Đã đóng' : 'Chưa đóng'} />
+                    </td>
+                     <td className="px-6 py-4 text-right">
+                      {inv.TrangThaiThanhToan === 0 && (
+                        <button
+                          onClick={() => handleConfirmCash(inv.MaHoaDon)}
+                          disabled={isProcessing === inv.MaHoaDon}
+                          className="inline-flex items-center px-3 py-1.5 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                        >
+                          {isProcessing === inv.MaHoaDon ? (
+                            <Loader2 size={14} className="animate-spin mr-1.5" />
+                          ) : (
+                            <Banknote size={14} className="mr-1.5" />
+                          )}
+                          Thu tiền mặt
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

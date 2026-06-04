@@ -40,7 +40,7 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
             .filter(item => item.MaPhong === parseInt(roomId))
             .filter(item => new Date(item.ThoiGian) < currentSelection)
             .sort((a, b) => new Date(b.ThoiGian) - new Date(a.ThoiGian))[0];
-
+        
         if (lastRecord) {
             setFormData(prev => ({
                 ...prev,
@@ -183,7 +183,7 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
                     onClick={handleOpenAddModal}
                     className="flex items-center px-5 py-2.5 bg-[#00529C] text-white rounded-xl font-semibold shadow-lg hover:bg-blue-800 transition-all active:scale-95 text-sm"
                 >
-                    <Plus size={18} className="mr-2" /> Ghi điện nước phòng
+                    <Plus size={18} className="mr-2" /> Ghi chỉ số điện nước
                 </button>
             </div>
 
@@ -327,7 +327,7 @@ const RoomUtilityFeesTab = ({ data, rooms, isLoading, refresh }) => {
                     <div className="bg-white w-full max-w-lg rounded-[24px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 font-sans text-slate-700">
                         <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <h3 className="font-bold text-slate-800 uppercase text-xs tracking-widest italic">
-                                {editingId ? "Cập nhật chỉ số điện nước" : "Ghi điện nước Phòng"}
+                                {editingId ? "Cập nhật chỉ số điện nước" : "Ghi chỉ số điện nước"}
                             </h3>
                             <button onClick={() => setIsModalOpen(false)} className="p-1 hover:bg-white rounded-full transition-colors"><X size={18} /></button>
                         </div>

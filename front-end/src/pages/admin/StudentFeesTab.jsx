@@ -69,17 +69,6 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
         );
     }, [studentList, studentSearch]);
 
-    const handleConfirmCash = async (maHoaDon) => {
-        if (!window.confirm("Bạn có chắc chắn muốn xác nhận sinh viên đã đóng tiền mặt?")) return;
-
-        try {
-            await axiosClient.put(`/admin/invoices/${maHoaDon}/confirm-cash`);
-            toast.success("Xác nhận thành công!");
-            refresh(); // Gọi lại hàm lấy dữ liệu để update bảng
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Lỗi khi xác nhận!");
-        }
-    };
 
     const handleSelect = async (student) => {
         setSelectedStudent(student);
@@ -156,8 +145,17 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                 soTien: 0 // Gửi 0 vì Backend sẽ tự SELECT HopDong để tính tiền thực tế
             });
 
-            toast.success("Hệ thống đã tự động tính phí dựa trên hợp đồng và tạo hóa đơn thành công!", { id: loadingToast, duration: 4000 });
+            toast.success("Hóa đơn tiền phòng đã được khởi tạo thành công!", { id: loadingToast, duration: 4000 });
+            setSelectedStudent(null);  
+        setActiveContract(null);   
+        setStudentSearch('');       
+        setFormData({               
+            ...formData,
+            maSV: '',
+            maPhong: ''
+        });
             setIsModalOpen(false);
+            
             refresh();
         } catch (error) {
             toast.error(error.response?.data?.message || "Lỗi khi tạo hóa đơn tiền phòng", { id: loadingToast });
@@ -254,17 +252,7 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <div className="flex justify-end gap-2">
-                                            {/* Nút xác nhận tiền mặt (Chỉ hiện khi chưa thanh toán) */}
-                                            {f.TrangThaiThanhToan === 0 && (
-                                                <button
-                                                    onClick={() => handleConfirmCash(f.MaHoaDon)}
-                                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase border border-emerald-100 hover:bg-emerald-100 transition-all"
-                                                    title="Xác nhận đóng tiền mặt"
-                                                >
-                                                    Thu tiền mặt
-                                                </button>
-                                            )}
+            
 
                                             {/* Nút Xóa (Giữ nguyên logic của bạn) */}
                                             <button
@@ -274,7 +262,7 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                                             >
                                                 <Trash2 size={16} />
                                             </button>
-                                        </div>
+                                        
                                     </td>
                                 </tr>
                             ))}

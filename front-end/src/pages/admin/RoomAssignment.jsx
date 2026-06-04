@@ -273,7 +273,7 @@ const RoomAssignment = () => {
                 </div>
                 <div className="col-span-2 pt-2 border-t border-blue-100">
                   <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Ghi chú từ sinh viên</p>
-                  <p className="text-sm font-medium text-slate-700 mt-1 italic">{selectedReg.GhiChu ? `"${selectedReg.GhiChu}"` : 'Không có ghi chú.'}</p>
+                  <p className=" text-sm font-medium text-slate-700 mt-1 italic break-words whitespace-pre-wrap leading-relaxed">{selectedReg.GhiChu ? `"${selectedReg.GhiChu}"` : 'Không có ghi chú.'}</p>
                 </div>
               </div>
 
