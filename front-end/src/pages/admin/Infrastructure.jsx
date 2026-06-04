@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Building2, Edit, Trash2, Layout, 
-  PlusCircle, X, Loader2, Home, Users, CheckCircle2 
+import {
+  Plus, Building2, Edit, Trash2, Layout,
+  PlusCircle, X, Loader2, Home, Users, CheckCircle2
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
 
 const Infrastructure = () => {
-  const [zones, setZones] = useState([]); 
-  const [buildings, setBuildings] = useState([]); 
+  const [zones, setZones] = useState([]);
+  const [buildings, setBuildings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeAreaId, setActiveAreaId] = useState(null); 
+  const [activeAreaId, setActiveAreaId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalType, setModalType] = useState('area'); 
+  const [modalType, setModalType] = useState('area');
   const [editingItem, setEditingItem] = useState(null);
   const [formData, setFormData] = useState({ name: '' });
 
@@ -79,7 +79,10 @@ const Infrastructure = () => {
       }
       setIsModalOpen(false);
       fetchData();
-    } catch (error) { toast.error("Lỗi khi lưu dữ liệu"); }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Lỗi lưu dữ liệu';
+      toast.error(errorMessage);
+    }
   };
 
   const handleDelete = async (type, id) => {
@@ -102,7 +105,7 @@ const Infrastructure = () => {
           <h1 className="text-2xl font-semibold text-slate-800 tracking-tight uppercase tracking-tighter">Quản lý Khu, Tòa nhà</h1>
           <p className="text-slate-500 font-medium text-sm">Thiết lập danh mục hạ tầng hệ thống ký túc xá</p>
         </div>
-        <button onClick={() => { setModalType('area'); setEditingItem(null); setFormData({name:''}); setIsModalOpen(true); }} className="flex items-center px-5 py-2.5 bg-[#00529C] text-white rounded-xl font-semibold shadow-lg hover:bg-blue-800 transition-all active:scale-95 text-sm">
+        <button onClick={() => { setModalType('area'); setEditingItem(null); setFormData({ name: '' }); setIsModalOpen(true); }} className="flex items-center px-5 py-2.5 bg-[#00529C] text-white rounded-xl font-semibold shadow-lg hover:bg-blue-800 transition-all active:scale-95 text-sm">
           <Plus size={18} className="mr-2" /> Thêm Khu mới
         </button>
       </div>
@@ -125,8 +128,8 @@ const Infrastructure = () => {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={(e) => { e.stopPropagation(); setModalType('area'); setEditingItem(zone); setFormData({name: zone.TenKhu}); setIsModalOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg"><Edit size={14}/></button>
-                    <button onClick={(e) => { e.stopPropagation(); handleDelete('area', zone.MaKhu); }} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg"><Trash2 size={14}/></button>
+                    <button onClick={(e) => { e.stopPropagation(); setModalType('area'); setEditingItem(zone); setFormData({ name: zone.TenKhu }); setIsModalOpen(true); }} className="p-1.5 text-blue-500 hover:bg-blue-100 rounded-lg"><Edit size={14} /></button>
+                    <button onClick={(e) => { e.stopPropagation(); handleDelete('area', zone.MaKhu); }} className="p-1.5 text-red-500 hover:bg-red-100 rounded-lg"><Trash2 size={14} /></button>
                   </div>
                 </div>
               </div>
@@ -139,7 +142,7 @@ const Infrastructure = () => {
           <div className="flex justify-between items-center ml-2">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tòa nhà thuộc {zones.find(z => z.MaKhu === activeAreaId)?.TenKhu || "Khu vực"}</h3>
             {activeAreaId && (
-              <button onClick={() => { setModalType('building'); setEditingItem(null); setFormData({name:''}); setIsModalOpen(true); }} className="text-[12px] font-bold text-blue-600 flex items-center hover:text-blue-700 uppercase tracking-wider">
+              <button onClick={() => { setModalType('building'); setEditingItem(null); setFormData({ name: '' }); setIsModalOpen(true); }} className="text-[12px] font-bold text-blue-600 flex items-center hover:text-blue-700 uppercase tracking-wider">
                 <Plus size={14} className="mr-1" /> Thêm Tòa
               </button>
             )}
@@ -156,12 +159,12 @@ const Infrastructure = () => {
                     <h4 className="font-bold text-slate-800 text-lg">{building.TenToaNha}</h4>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => { setModalType('building'); setEditingItem(building); setFormData({name: building.TenToaNha}); setIsModalOpen(true); }} className="p-2 text-blue-600 bg-blue-50 rounded-xl"><Edit size={16}/></button>
-                    <button onClick={() => handleDelete('building', building.MaToaNha)} className="p-2 text-red-600 bg-red-50 rounded-xl"><Trash2 size={16}/></button>
+                    <button onClick={() => { setModalType('building'); setEditingItem(building); setFormData({ name: building.TenToaNha }); setIsModalOpen(true); }} className="p-2 text-blue-600 bg-blue-50 rounded-xl"><Edit size={16} /></button>
+                    <button onClick={() => handleDelete('building', building.MaToaNha)} className="p-2 text-red-600 bg-red-50 rounded-xl"><Trash2 size={16} /></button>
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => handleViewRooms(building)}
                   className="w-full mt-2 py-2.5 text-[11px] font-bold text-slate-400 bg-slate-50 hover:bg-[#00529C] hover:text-white hover:shadow-lg rounded-xl transition-all uppercase tracking-widest border border-slate-100"
                 >
@@ -207,21 +210,20 @@ const Infrastructure = () => {
                         <tr key={room.MaPhong} className="hover:bg-slate-50 transition-colors">
                           <td className="py-4 px-2 font-bold text-slate-900">P.{room.TenPhong}</td>
                           <td className="py-4 px-2">
-                             <span className={`text-[10px] font-bold uppercase ${room.GioiTinh === 1 ? 'text-blue-500' : 'text-rose-500'}`}>
-                                {room.GioiTinh === 1 ? 'Nam' : 'Nữ'}
-                             </span>
+                            <span className={`text-[10px] font-bold uppercase ${room.GioiTinh === 1 ? 'text-blue-500' : 'text-rose-500'}`}>
+                              {room.GioiTinh === 1 ? 'Nam' : 'Nữ'}
+                            </span>
                           </td>
                           <td className="py-4 px-2 text-xs text-slate-500">{room.LoaiPhong}</td>
                           <td className="py-4 px-2 text-center text-xs font-bold text-blue-600">
-                             {room.SoSinhVienHienTai} / {room.SucChua}
+                            {room.SoSinhVienHienTai} / {room.SucChua}
                           </td>
                           <td className="py-4 px-2 text-right">
-                             <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border ${
-                               room.TrangThai === 'Đã đầy' ? 'bg-red-50 text-red-500 border-red-100' :
-                               room.TrangThai === 'Bảo trì' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
-                             }`}>
-                                {room.TrangThai}
-                             </span>
+                            <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border ${room.TrangThai === 'Đã đầy' ? 'bg-red-50 text-red-500 border-red-100' :
+                                room.TrangThai === 'Bảo trì' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                              }`}>
+                              {room.TrangThai}
+                            </span>
                           </td>
                         </tr>
                       ))}
@@ -230,7 +232,7 @@ const Infrastructure = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
               <button onClick={() => setShowRoomModal(false)} className="px-6 py-2 bg-slate-800 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-slate-700 transition-all shadow-lg">Đóng lại</button>
             </div>
@@ -246,14 +248,14 @@ const Infrastructure = () => {
               <h3 className="font-bold text-slate-800 uppercase text-xs tracking-[0.1em]">
                 {editingItem ? 'Cập nhật' : 'Khởi tạo'} {modalType === 'area' ? 'Khu vực' : 'Tòa nhà'}
               </h3>
-              <button onClick={() => setIsModalOpen(false)}><X size={18}/></button>
+              <button onClick={() => setIsModalOpen(false)}><X size={18} /></button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-5 text-sm">
-               <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-400 uppercase ml-1">Tên {modalType === 'area' ? 'Khu vực' : 'Tòa nhà'}</label>
-                  <input required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-semibold" value={formData.name} onChange={(e) => setFormData({ name: e.target.value })} />
-               </div>
-               <button type="submit" className="w-full py-3 bg-[#00529C] text-white rounded-xl font-bold shadow-lg uppercase text-xs tracking-widest active:scale-95 transition-all">Xác nhận</button>
+              <div className="space-y-2">
+                <label className="text-[11px] font-bold text-slate-400 uppercase ml-1">Tên {modalType === 'area' ? 'Khu vực' : 'Tòa nhà'}</label>
+                <input required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-semibold" value={formData.name} onChange={(e) => setFormData({ name: e.target.value })} />
+              </div>
+              <button type="submit" className="w-full py-3 bg-[#00529C] text-white rounded-xl font-bold shadow-lg uppercase text-xs tracking-widest active:scale-95 transition-all">Xác nhận</button>
             </form>
           </div>
         </div>

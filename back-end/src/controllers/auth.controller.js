@@ -12,9 +12,20 @@ const transporter = nodemailer.createTransport({
     }
 });
 
+// Hàm làm sạch: Trim đầu cuối + đưa nhiều dấu cách về 1
+const normalizeString = (str) => {
+    if (!str || typeof str !== 'string') return str;
+    return str.trim().replace(/\s+/g, ' ');
+};
+
 // 1. ĐĂNG KÝ TÀI KHOẢN & GỬI MAIL
 exports.register = async (req, res) => {
-    const { msv, fullname, email, password, gioiTinh } = req.body;
+    // Làm sạch dữ liệu ngay khi nhận vào
+    const msv = normalizeString(req.body.msv);
+    const fullname = normalizeString(req.body.fullname);
+    const email = req.body.email ? req.body.email.trim() : ''; // Email chỉ trim, không replace dấu cách
+    const { password, gioiTinh } = req.body;
+
     const connection = await pool.getConnection();
 
     try {
@@ -118,7 +129,9 @@ exports.verifyEmail = async (req, res) => {
 
 // 3. ĐĂNG NHẬP (Chặn nếu chưa xác nhận mail)
 exports.login = async (req, res) => {
-    const { username, password } = req.body;
+    // Làm sạch username (Mã sinh viên thường không có dấu cách)
+    const username = normalizeString(req.body.username);
+    const { password } = req.body;
 
     try {
         const [users] = await pool.execute('SELECT * FROM TaiKhoan WHERE TenDangNhap = ?', [username]);
@@ -199,7 +212,7 @@ exports.forgotPassword = async (req, res) => {
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
                     <h2 style="color: #00529C; text-align: center;">Khôi phục mật khẩu</h2>
-                    <p>Xin chào <strong>${students.HoTen}</strong>,</p>
+                    <p>Xin chào bạn</strong>,</p>
                     <p>Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Ký túc xá. Dưới đây là mã xác nhận 6 số của bạn:</p>
                     <div style="text-align: center; margin: 30px 0;">
                         <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #00529C; background-color: #f1f5f9; padding: 15px 30px; border-radius: 10px; border: 2px dashed #cbd5e1;">${otp}</span>

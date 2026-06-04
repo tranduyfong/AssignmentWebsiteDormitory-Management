@@ -14,11 +14,15 @@ exports.getAllZones = async (req, res) => {
 exports.createZone = async (req, res) => {
     const { tenKhu } = req.body;
     try {
+        // Kiểm tra trùng tên Khu
+        const [existing] = await pool.execute('SELECT MaKhu FROM Khu WHERE TenKhu = ?', [tenKhu]);
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Tên khu này đã tồn tại!' });
+        }
         await pool.execute('INSERT INTO Khu (TenKhu) VALUES (?)', [tenKhu]);
-        res.status(201).json({ message: 'Thêm Khu mới thành công!' });
+        res.status(201).json({ message: 'Thêm khu thành công!' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi thêm Khu.' });
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };
 
@@ -26,11 +30,20 @@ exports.updateZone = async (req, res) => {
     const { id } = req.params; // MaKhu
     const { tenKhu } = req.body;
     try {
+        // Kiểm tra xem tên này đã có ở khu nào khác (MaKhu != id) chưa
+        const [existing] = await pool.execute(
+            'SELECT MaKhu FROM Khu WHERE TenKhu = ? AND MaKhu != ?',
+            [tenKhu, id]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Tên khu này đã tồn tại!' });
+        }
+
         await pool.execute('UPDATE Khu SET TenKhu = ? WHERE MaKhu = ?', [tenKhu, id]);
-        res.status(200).json({ message: 'Cập nhật tên Khu thành công!' });
+        res.status(200).json({ message: 'Cập nhật khu thành công!' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi cập nhật Khu.' });
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };
 
@@ -65,11 +78,18 @@ exports.getAllBuildings = async (req, res) => {
 exports.createBuilding = async (req, res) => {
     const { maKhu, tenToaNha } = req.body;
     try {
+        // Kiểm tra trùng tên Tòa nhà trong cùng một Khu
+        const [existing] = await pool.execute(
+            'SELECT MaToaNha FROM ToaNha WHERE MaKhu = ? AND TenToaNha = ?',
+            [maKhu, tenToaNha]
+        );
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Tòa nhà này đã tồn tại trong khu đã chọn!' });
+        }
         await pool.execute('INSERT INTO ToaNha (MaKhu, TenToaNha) VALUES (?, ?)', [maKhu, tenToaNha]);
-        res.status(201).json({ message: 'Thêm Tòa nhà mới thành công!' });
+        res.status(201).json({ message: 'Thêm tòa nhà thành công!' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi thêm Tòa nhà.' });
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };
 
@@ -77,11 +97,23 @@ exports.updateBuilding = async (req, res) => {
     const { id } = req.params; // MaToaNha
     const { maKhu, tenToaNha } = req.body;
     try {
-        await pool.execute('UPDATE ToaNha SET MaKhu = ?, TenToaNha = ? WHERE MaToaNha = ?', [maKhu, tenToaNha, id]);
-        res.status(200).json({ message: 'Cập nhật Tòa nhà thành công!' });
+        // Kiểm tra trùng tên trong CÙNG KHU, nhưng khác mã tòa nhà hiện tại
+        const [existing] = await pool.execute(
+            'SELECT MaToaNha FROM ToaNha WHERE TenToaNha = ? AND MaKhu = ? AND MaToaNha != ?',
+            [tenToaNha, maKhu, id]
+        );
+
+        if (existing.length > 0) {
+            return res.status(400).json({ message: 'Tên tòa nhà này đã tồn tại trong khu đã chọn!' });
+        }
+
+        await pool.execute(
+            'UPDATE ToaNha SET MaKhu = ?, TenToaNha = ? WHERE MaToaNha = ?',
+            [maKhu, tenToaNha, id]
+        );
+        res.status(200).json({ message: 'Cập nhật tòa nhà thành công!' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Lỗi khi cập nhật Tòa nhà.' });
+        res.status(500).json({ message: 'Lỗi server' });
     }
 };
 
