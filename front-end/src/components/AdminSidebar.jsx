@@ -3,7 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Building2, Users, Home, FileCheck, CreditCard,
   AlertTriangle, MessageSquare, BarChart3, LogOut,
-  FileText, ChevronRight, BookOpen, Receipt, FileSignature
+  FileText, ChevronRight, BookOpen, Receipt, FileSignature, Landmark
 } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, collapsed,end = false }) => (
@@ -47,13 +47,10 @@ const navigate = useNavigate();
         style={{ backgroundColor: humgBlue }}
         className={`p-5 flex items-center ${isOpen ? 'space-x-4' : 'justify-center'} shadow-md transition-all duration-300 h-24 flex-shrink-0`}
       >
-        <div className="w-12 h-12 bg-white rounded-lg p-1.5 flex-shrink-0 shadow-lg border border-white/20">
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_Truong_Dai_hoc_Mo_-_Dia_chat.jpg"
-            alt="HUMG"
-            className="w-full h-full object-contain rounded-sm"
-          />
+        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg border border-white/20">
+          <Landmark size={30} color={humgBlue}/>
         </div>
+        
         {isOpen && (
           <div className="flex flex-col overflow-hidden animate-in fade-in duration-500">
             <span className="text-white font-black text-lg leading-tight uppercase tracking-tight whitespace-nowrap">

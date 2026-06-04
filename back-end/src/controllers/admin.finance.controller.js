@@ -8,14 +8,14 @@ exports.recordUtilities = async (req, res) => {
         const [existingRecords] = await pool.execute(checkQuery, [maPhong, thoiGian]);
 
         if (existingRecords.length > 0) {
-            return res.status(400).json({ 
-                message: 'Tháng này phòng đã được ghi nhận chỉ số điện nước rồi. Không được tạo trùng!' 
+            return res.status(400).json({
+                message: 'Tháng này phòng đã được ghi nhận chỉ số điện nước rồi. Không được tạo trùng!'
             });
         }
 
         if (Number(chiSoDienMoi) < Number(chiSoDienCu) || Number(chiSoNuocMoi) < Number(chiSoNuocCu)) {
-            return res.status(400).json({ 
-                message: 'Chỉ số mới không được nhỏ hơn chỉ số cũ!' 
+            return res.status(400).json({
+                message: 'Chỉ số mới không được nhỏ hơn chỉ số cũ!'
             });
         }
 
@@ -24,13 +24,13 @@ exports.recordUtilities = async (req, res) => {
             INSERT INTO DienNuoc (MaPhong, ChiSoDienCu, ChiSoDienMoi, ChiSoNuocCu, ChiSoNuocMoi, ThoiGian, TrangThaiChot)
             VALUES (?, ?, ?, ?, ?, ?, 0)
         `;
-        
+
         await pool.execute(insertQuery, [
-            maPhong, 
-            chiSoDienCu, 
-            chiSoDienMoi, 
-            chiSoNuocCu, 
-            chiSoNuocMoi, 
+            maPhong,
+            chiSoDienCu,
+            chiSoDienMoi,
+            chiSoNuocCu,
+            chiSoNuocMoi,
             thoiGian
         ]);
 
@@ -38,7 +38,7 @@ exports.recordUtilities = async (req, res) => {
 
     } catch (error) {
         console.error("Lỗi recordUtilities:", error);
-        res.status(500).json({ message: 'Lỗi server khi ghi nhận điện nước.' });
+        res.status(500).json({ message: 'Lỗi ghi nhận điện nước.' });
     }
 };
 exports.updateUtility = async (req, res) => {
@@ -48,7 +48,7 @@ exports.updateUtility = async (req, res) => {
     try {
         // 1. Kiểm tra bản ghi có tồn tại không và trạng thái chốt
         const [records] = await pool.execute(
-            'SELECT TrangThaiChot FROM DienNuoc WHERE MaDienNuoc = ?', 
+            'SELECT TrangThaiChot FROM DienNuoc WHERE MaDienNuoc = ?',
             [id]
         );
 
@@ -58,8 +58,8 @@ exports.updateUtility = async (req, res) => {
 
         // 2. Nếu đã chốt hóa đơn (TrangThaiChot = 1) thì KHÔNG cho sửa
         if (records[0].TrangThaiChot === 1) {
-            return res.status(400).json({ 
-                message: 'Dữ liệu đã được chốt hóa đơn, không thể chỉnh sửa!' 
+            return res.status(400).json({
+                message: 'Dữ liệu đã được chốt hóa đơn, không thể chỉnh sửa!'
             });
         }
 
@@ -70,15 +70,15 @@ exports.updateUtility = async (req, res) => {
         const [duplicates] = await pool.execute(checkDuplicateQuery, [maPhong, thoiGian, id]);
 
         if (duplicates.length > 0) {
-            return res.status(400).json({ 
-                message: 'Không thể cập nhật! Tháng này phòng đã có một bản ghi điện nước khác tồn tại.' 
+            return res.status(400).json({
+                message: 'Không thể cập nhật! Tháng này phòng đã có một bản ghi điện nước khác tồn tại.'
             });
         }
 
         // 3. KIỂM TRA CHỈ SỐ (Số mới không được nhỏ hơn số cũ)
         if (Number(chiSoDienMoi) < Number(chiSoDienCu) || Number(chiSoNuocMoi) < Number(chiSoNuocCu)) {
-            return res.status(400).json({ 
-                message: 'Chỉ số mới không được nhỏ hơn chỉ số cũ!' 
+            return res.status(400).json({
+                message: 'Chỉ số mới không được nhỏ hơn chỉ số cũ!'
             });
         }
 
@@ -93,14 +93,14 @@ exports.updateUtility = async (req, res) => {
                 ThoiGian = ?
             WHERE MaDienNuoc = ?
         `;
-        
+
         await pool.execute(query, [
-            maPhong, 
-            chiSoDienCu, 
-            chiSoDienMoi, 
-            chiSoNuocCu, 
-            chiSoNuocMoi, 
-            thoiGian, 
+            maPhong,
+            chiSoDienCu,
+            chiSoDienMoi,
+            chiSoNuocCu,
+            chiSoNuocMoi,
+            thoiGian,
             id
         ]);
 
@@ -108,7 +108,7 @@ exports.updateUtility = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi server khi cập nhật dữ liệu.' });
+        res.status(500).json({ message: 'Lỗi cập nhật dữ liệu.' });
     }
 };
 exports.deleteUtility = async (req, res) => {
@@ -117,7 +117,7 @@ exports.deleteUtility = async (req, res) => {
     try {
         // 1. Kiểm tra bản ghi có tồn tại không và trạng thái chốt
         const [records] = await pool.execute(
-            'SELECT TrangThaiChot FROM DienNuoc WHERE MaDienNuoc = ?', 
+            'SELECT TrangThaiChot FROM DienNuoc WHERE MaDienNuoc = ?',
             [id]
         );
 
@@ -127,8 +127,8 @@ exports.deleteUtility = async (req, res) => {
 
         // 2. Nếu đã chốt hóa đơn (TrangThaiChot = 1) thì KHÔNG cho xóa
         if (records[0].TrangThaiChot === 1) {
-            return res.status(400).json({ 
-                message: 'Không thể xóa bản ghi này vì hóa đơn đã được khởi tạo và chốt dữ liệu.' 
+            return res.status(400).json({
+                message: 'Không thể xóa bản ghi này vì hóa đơn đã được khởi tạo và chốt dữ liệu.'
             });
         }
 
@@ -139,7 +139,7 @@ exports.deleteUtility = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi server khi thực hiện xóa dữ liệu.' });
+        res.status(500).json({ message: 'Lỗi thực hiện xóa dữ liệu.' });
     }
 };
 
@@ -150,13 +150,15 @@ exports.getAllUtilities = async (req, res) => {
             SELECT 
                 dn.*, 
                 p.TenPhong, 
-                t.TenToaNha
+                t.TenToaNha,
+                k.TenKhu
             FROM DienNuoc dn
             JOIN Phong p ON dn.MaPhong = p.MaPhong
             JOIN ToaNha t ON p.MaToaNha = t.MaToaNha
+            JOIN Khu k ON t.MaKhu = k.MaKhu 
             ORDER BY dn.ThoiGian DESC, p.TenPhong ASC
         `;
-        
+
         const [results] = await pool.execute(query);
         res.status(200).json(results);
     } catch (error) {
@@ -169,76 +171,96 @@ exports.getAllUtilities = async (req, res) => {
 exports.createInvoice = async (req, res) => {
     const { maPhong, maSV, maDienNuoc, loaiHoaDon, kyHoaDon, soTien } = req.body;
     const ngayLap = new Date().toISOString().split('T')[0];
-
     const connection = await pool.getConnection();
+
     try {
         await connection.beginTransaction();
 
-        // LUỒNG 1: NẾU LÀ HÓA ĐƠN ĐIỆN NƯỚC -> CHIA ĐỀU CHO SINH VIÊN TRONG PHÒNG
-        if (loaiHoaDon === 'Điện nước' && maDienNuoc) {
-            // 1. Tìm danh sách sinh viên đang ở trong phòng này
-            const [students] = await connection.execute(
-                'SELECT MaSV FROM SinhVien WHERE MaPhong = ?', 
-                [maPhong]
+        let finalAmount = Number(soTien);
+
+        // --- LUỒNG 1: TIỀN PHÒNG (Tính toán tự động) ---
+        if (loaiHoaDon === 'Tiền phòng') {
+            // 1. Lấy thông tin hợp đồng hiện tại
+            const [contracts] = await connection.execute(
+                'SELECT NgayBatDau, NgayKetThuc FROM HopDong WHERE MaSV = ? AND TrangThai = 1 LIMIT 1',
+                [maSV]
             );
 
-            if (students.length === 0) {
-                throw new Error('Phòng này hiện không có sinh viên nào cư trú để chia hóa đơn!');
+            if (contracts.length === 0) throw new Error('Sinh viên không có hợp đồng hiệu lực!');
+
+            const contract = contracts[0];
+            const start = new Date(contract.NgayBatDau);
+            const end = new Date(contract.NgayKetThuc);
+
+            // 2. Tính TỔNG số tháng từ lúc bắt đầu đến lúc kết thúc mới
+            let totalMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+            if (end.getDate() > start.getDate()) totalMonths++;
+            if (totalMonths <= 0) totalMonths = 1;
+
+            const DON_GIA = 500000; // 500k/tháng 
+            const tongTienPhaiLap = totalMonths * DON_GIA;
+
+            // 3. Tính xem sinh viên này đã có những hóa đơn "Tiền phòng" nào cho hợp đồng này chưa
+            const [billedStats] = await connection.execute(
+                `SELECT 
+                    SUM(SoTien) as totalBilled,
+                    COUNT(CASE WHEN TrangThaiThanhToan = 0 THEN 1 END) as unpaidInvoices
+                 FROM HoaDon 
+                 WHERE MaSV = ? AND LoaiHoaDon = 'Tiền phòng' AND NgayLap >= ?`,
+                [maSV, contract.NgayBatDau]
+            );
+
+            const soTienDaLap = Number(billedStats[0].totalBilled || 0);
+            const soHoaDonChuaThanhToan = Number(billedStats[0].unpaidInvoices || 0);
+
+
+            finalAmount = tongTienPhaiLap - soTienDaLap;
+
+
+
+            if (finalAmount <= 0) {
+                if (soHoaDonChuaThanhToan > 0) {
+                    throw new Error('Sinh viên này hiện đang có hóa đơn tiền phòng chưa thanh toán.');
+                }
+                throw new Error('Sinh viên đã được lập hóa đơn đủ cho toàn bộ thời hạn hợp đồng hiện tại.');
             }
+        }
 
-            // 2. Tính số tiền chia đầu người
-            const count = students.length;
-            const dividedAmount = Math.round(soTien / count); // Làm tròn số tiền
+        // --- LUỒNG 2: ĐIỆN NƯỚC (Chia đầu người trong phòng) ---
+        if (loaiHoaDon === 'Điện nước') {
+            if (!maDienNuoc) throw new Error('Thiếu mã chỉ số điện nước!');
 
-            // 3. Lặp qua danh sách SV để tạo từng hóa đơn
-            const insertInvoiceQuery = `
+            const [students] = await connection.execute('SELECT MaSV FROM SinhVien WHERE MaPhong = ?', [maPhong]);
+            if (students.length === 0) throw new Error('Phòng không có sinh viên ở!');
+
+            const dividedAmount = Math.round(finalAmount / students.length);
+
+            const queryBulk = `
                 INSERT INTO HoaDon (MaPhong, MaSV, MaDienNuoc, LoaiHoaDon, KyHoaDon, SoTien, TrangThaiThanhToan, NgayLap)
                 VALUES (?, ?, ?, ?, ?, ?, 0, ?)
             `;
 
             for (let sv of students) {
-                await connection.execute(insertInvoiceQuery, [
-                    maPhong, 
-                    sv.MaSV, 
-                    maDienNuoc, 
-                    'Điện nước', 
-                    kyHoaDon, 
-                    dividedAmount, 
-                    ngayLap
-                ]);
+                await connection.execute(queryBulk, [maPhong, sv.MaSV, maDienNuoc, 'Điện nước', kyHoaDon, dividedAmount, ngayLap]);
             }
 
-            // 4. Cập nhật trạng thái đã chốt cho bản ghi điện nước
-            await connection.execute(
-                'UPDATE DienNuoc SET TrangThaiChot = 1 WHERE MaDienNuoc = ?', 
-                [maDienNuoc]
-            );
-
-        } 
-        // LUỒNG 2: NẾU LÀ TIỀN PHÒNG HOẶC PHÍ KHÁC -> GIỮ NGUYÊN (TẠO 1 HÓA ĐƠN)
+            await connection.execute('UPDATE DienNuoc SET TrangThaiChot = 1 WHERE MaDienNuoc = ?', [maDienNuoc]);
+        }
         else {
-            const queryHoaDon = `
+            const querySingle = `
                 INSERT INTO HoaDon (MaPhong, MaSV, MaDienNuoc, LoaiHoaDon, KyHoaDon, SoTien, TrangThaiThanhToan, NgayLap)
-                VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+                VALUES (?, ?, NULL, ?, ?, ?, 0, ?)
             `;
-            await connection.execute(queryHoaDon, [
-                maPhong, 
-                maSV, 
-                maDienNuoc || null, 
-                loaiHoaDon, 
-                kyHoaDon, 
-                soTien, 
-                ngayLap
-            ]);
+            await connection.execute(querySingle, [maPhong, maSV, loaiHoaDon, kyHoaDon, finalAmount, ngayLap]);
         }
 
         await connection.commit();
-        res.status(201).json({ message: 'Khởi tạo hóa đơn thành công!' });
+        res.status(201).json({ message: 'Tạo hóa đơn thành công!', soTien: finalAmount });
 
     } catch (error) {
         await connection.rollback();
-        console.error("Lỗi createInvoice:", error);
-        res.status(400).json({ message: error.message || 'Lỗi khi tạo hóa đơn.' });
+        console.error("Lỗi tạo hóa đơn:", error.message);
+        res.status(400).json({ message: error.message || 'Lỗi hệ thống.' });
     } finally {
         connection.release();
     }
@@ -256,7 +278,7 @@ exports.deleteInvoice = async (req, res) => {
         await pool.execute('DELETE FROM HoaDon WHERE MaHoaDon = ?', [id]);
         res.status(200).json({ message: 'Đã xóa hóa đơn thành công.' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi xóa hóa đơn.' });
+        res.status(500).json({ message: 'Lỗi xóa hóa đơn.' });
     }
 };
 
@@ -274,5 +296,33 @@ exports.getAllInvoices = async (req, res) => {
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi lấy danh sách hóa đơn.' });
+    }
+};
+
+// API xác nhận thanh toán tiền mặt cho hóa đơn
+exports.confirmCashPayment = async (req, res) => {
+    const { id } = req.params; // MaHoaDon
+
+    try {
+        // Kiểm tra xem hóa đơn có tồn tại không
+        const [invoice] = await pool.execute('SELECT TrangThaiThanhToan FROM HoaDon WHERE MaHoaDon = ?', [id]);
+
+        if (invoice.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy hóa đơn!' });
+        }
+
+        if (invoice[0].TrangThaiThanhToan === 1) {
+            return res.status(400).json({ message: 'Hóa đơn này đã được thanh toán trước đó.' });
+        }
+
+        // Cập nhật trạng thái thành Đã thanh toán (1)
+        await pool.execute(
+            'UPDATE HoaDon SET TrangThaiThanhToan = 1, PhuongThucThanhToan = "Tiền mặt" WHERE MaHoaDon = ?',
+            [id]
+        );
+        res.status(200).json({ message: 'Đã xác nhận thanh toán tiền mặt thành công!' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server khi xác nhận thanh toán.' });
     }
 };

@@ -42,3 +42,4 @@ exports.getAvailableRooms = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi lấy danh sách phòng trống.' });
     }
 };
+

@@ -139,7 +139,7 @@ const Infrastructure = () => {
           <div className="flex justify-between items-center ml-2">
             <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tòa nhà thuộc {zones.find(z => z.MaKhu === activeAreaId)?.TenKhu || "Khu vực"}</h3>
             {activeAreaId && (
-              <button onClick={() => { setModalType('building'); setEditingItem(null); setFormData({name:''}); setIsModalOpen(true); }} className="text-[10px] font-bold text-blue-600 flex items-center hover:text-blue-700 uppercase tracking-wider">
+              <button onClick={() => { setModalType('building'); setEditingItem(null); setFormData({name:''}); setIsModalOpen(true); }} className="text-[12px] font-bold text-blue-600 flex items-center hover:text-blue-700 uppercase tracking-wider">
                 <Plus size={14} className="mr-1" /> Thêm Tòa
               </button>
             )}

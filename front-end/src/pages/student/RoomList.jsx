@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Home, Users, Eye, X, Building2, Loader2, Info, AlertCircle } from 'lucide-react';
+import { useOutletContext } from 'react-router-dom';
+import { Search, Home, Users, Eye, X, Building2, Loader2, Info, Lock, AlertCircle } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
 
 const RoomList = () => {
+    const { user } = useOutletContext();
     const [rooms, setRooms] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [filterArea, setFilterArea] = useState('Tất cả');
@@ -36,16 +38,22 @@ const RoomList = () => {
     const uniqueAreas = ['Tất cả', ...new Set(rooms.map(r => r.TenKhu))];
     const uniqueBuildings = ['Tất cả', ...new Set(rooms.filter(r => filterArea === 'Tất cả' || r.TenKhu === filterArea).map(r => r.TenToaNha))];
 
-    // Kiểm tra xem sinh viên đã có phòng nào trong danh sách phòng hay chưa
+    // Logic kiểm tra sinh viên đã có phòng hay chưa
     const hasRoom = rooms.some(r => r.isMyRoom === true);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-10 font-sans">
             <div>
                 <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight">Tra cứu phòng ở</h1>
-                <p className="text-slate-500 font-medium text-sm">Xem thông tin và tình trạng chỗ trống các phòng tại HUMG</p>
+                <p className="text-slate-500 font-medium text-sm">Xem thông tin và tình trạng chỗ trống các phòng tại KTX</p>
             </div>
-
+            {!hasRoom && (
+                <div className="flex items-center justify-center p-4 bg-red-50 border border-red-100 rounded-2xl animate-in fade-in duration-500">
+                    <span className="text-red-600 text-sm font-bold flex items-center gap-2">
+                        <AlertCircle size={18} /> Sinh viên hiện chưa có phòng ở
+                    </span>
+                </div>
+            )}
             {/* Bộ lọc */}
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4">
                 <select
@@ -67,14 +75,7 @@ const RoomList = () => {
                     ))}
                 </select>
             </div>
-            {!hasRoom && (
-                <div className="flex items-center justify-center p-4 mb-6 bg-red-50 border border-red-100 rounded-2xl">
-                    <span className="text-red-600 text-sm font-bold flex items-center gap-2">
-                        <AlertCircle size={18} />
-                        Sinh viên hiện chưa có phòng ở
-                    </span>
-                </div>
-            )}
+
             {/* Danh sách phòng */}
             {isLoading ? (
                 <div className="text-center py-20"><Loader2 className="animate-spin mx-auto text-slate-300" size={40} /></div>
@@ -82,54 +83,59 @@ const RoomList = () => {
                 <div className="text-center py-20 text-slate-400 bg-white rounded-3xl border border-dashed">Không tìm thấy phòng phù hợp.</div>
             ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredRooms.map((room) => (
-                        <div key={room.MaPhong} className="bg-white rounded-[24px] border border-slate-200 shadow-sm p-5 hover:shadow-md transition-all group">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className={`p-3 rounded-2xl ${room.GioiTinh === 1 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600'}`}>
-                                    <Home size={24} />
-                                </div>
-                                <div className="flex flex-col items-end gap-1.5">
-                                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border
-            ${room.TrangThai === 'Trống' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                                            room.TrangThai === 'Còn chỗ' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                                                'bg-red-50 text-red-500 border-red-100'}`}
-                                    >
-                                        {room.TrangThai}
+                    {filteredRooms.map((room) => {
+                        const isMyRoom = room.MaPhong === user?.MaPhong;
+
+                        return (
+                            <div key={room.MaPhong} className={`bg-white rounded-[24px] border transition-all p-5 hover:shadow-md ${isMyRoom ? 'border-blue-500 ring-4 ring-blue-50 shadow-lg' : 'border-slate-200 opacity-90'}`}>
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className="flex items-center space-x-3">
+                                        <div className={`p-2.5 rounded-xl transition-colors ${isMyRoom
+                                            ? (room.GioiTinh === 1 ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'bg-rose-600 text-white shadow-lg shadow-rose-200')
+                                            : (room.GioiTinh === 1 ? 'bg-blue-50 text-blue-600' : 'bg-rose-50 text-rose-600')
+                                            }`}>
+                                            <Home size={22} />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-800 text-lg leading-none">
+                                                P.{room.TenPhong} {isMyRoom && <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded ml-1 uppercase">Đang ở</span>}
+                                            </h3>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase mt-1.5">{room.TenKhu} • {room.TenToaNha}</p>
+                                        </div>
+                                    </div>
+                                    <span className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase border ${room.SoSinhVienHienTai >= room.SucChua ? 'bg-red-50 text-red-500 border-red-100' : 'bg-emerald-50 text-emerald-500 border-emerald-100'}`}>
+                                        {room.SoSinhVienHienTai >= room.SucChua ? 'Hết chỗ' : 'Còn chỗ'}
                                     </span>
-
-                                    {/* HIỂN THỊ TAG NẾU LÀ PHÒNG CỦA MÌNH */}
-                                    {room.isMyRoom && (
-                                        <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black uppercase tracking-widest rounded-md border border-amber-200 shadow-sm">
-                                            Phòng của bạn
-                                        </span>
-                                    )}
                                 </div>
+
+                                <div className="space-y-2 mb-5">
+                                    <div className="flex justify-between text-xs font-bold">
+                                        <span className="text-slate-500">Hiện có: {room.SoSinhVienHienTai}/{room.SucChua}</span>
+                                        <span className="text-slate-500 uppercase text-[10px]">{room.LoaiPhong}</span>
+                                    </div>
+                                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full transition-all duration-500 ${isMyRoom ? 'bg-blue-500' : room.SoSinhVienHienTai >= room.SucChua ? 'bg-red-400' : 'bg-emerald-400'}`}
+                                            style={{ width: `${(room.SoSinhVienHienTai / room.SucChua) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                    <div className="flex items-center text-[11px] font-bold text-slate-500 uppercase">
+                                        <Users size={13} className="mr-1" /> {room.GioiTinh === 1 ? 'Dành cho Nam' : 'Dành cho Nữ'}
+                                    </div>
+                                </div>
+
+                                {/* 4. HIỂN THỊ NÚT DỰA TRÊN ĐIỀU KIỆN */}
+                                {isMyRoom && (
+                                    <button
+                                        onClick={() => setSelectedRoom(room)}
+                                        className="w-full py-2.5 flex items-center justify-center bg-[#00529C] text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-blue-200 uppercase tracking-widest active:scale-95 hover:bg-blue-800"
+                                    >
+                                        <Eye size={16} className="mr-2" /> Xem chi tiết phòng đang ở
+                                    </button>
+                                )}
                             </div>
-
-                            <div className="space-y-2 mb-5">
-                                <div className="flex justify-between text-[11px] font-bold">
-                                    <span className="text-slate-500 uppercase">Hiện có: {room.SoSinhVienHienTai}/{room.SucChua} SV</span>
-                                    <span className="text-slate-400 uppercase">{room.LoaiPhong}</span>
-                                </div>
-                                <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                                    <div
-                                        className={`h-full transition-all duration-500 ${room.SoSinhVienHienTai >= room.SucChua ? 'bg-red-400' : 'bg-emerald-400'}`}
-                                        style={{ width: `${(room.SoSinhVienHienTai / room.SucChua) * 100}%` }}
-                                    ></div>
-                                </div>
-                                <div className="flex items-center text-[10px] font-bold text-slate-400 uppercase">
-                                    <Users size={12} className="mr-1" /> {room.GioiTinh === 1 ? 'Dành cho Nam' : 'Dành cho Nữ'}
-                                </div>
-                            </div>
-
-                            <button
-                                onClick={() => setSelectedRoom(room)}
-                                className="w-full py-2.5 flex items-center justify-center bg-slate-50 hover:bg-[#00529C] hover:text-white text-[#00529C] text-xs font-bold rounded-xl transition-all border border-blue-100 hover:border-transparent uppercase tracking-widest active:scale-95"
-                            >
-                                <Eye size={16} className="mr-2" /> Xem chi tiết
-                            </button>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
@@ -139,61 +145,40 @@ const RoomList = () => {
                     <div className="bg-white w-full max-w-md rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95">
                         <div className="p-6 bg-[#00529C] text-white flex justify-between items-center">
                             <div>
-                                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-200">Thông tin chi tiết</p>
-                                <h3 className="font-black text-2xl flex items-center mt-1 uppercase">P.{selectedRoom.TenPhong}</h3>
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-blue-200 italic">Thành viên phòng</p>
+                                <h3 className="font-black text-2xl flex items-center mt-1 uppercase">Phòng {selectedRoom.TenPhong}</h3>
                             </div>
                             <button onClick={() => setSelectedRoom(null)} className="p-2 hover:bg-white/20 rounded-full transition-colors"><X size={20} /></button>
                         </div>
 
-                        <div className="p-8 space-y-6 font-medium">
+                        <div className="p-8 space-y-6">
                             <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
                                 <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vị trí</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Vị trí</p>
                                     <p className="text-sm font-bold text-slate-800">{selectedRoom.TenKhu} - {selectedRoom.TenToaNha}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Loại phòng</p>
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest leading-none mb-1">Loại phòng</p>
                                     <p className="text-sm font-bold text-slate-800">{selectedRoom.LoaiPhong}</p>
                                 </div>
                             </div>
 
                             <div>
-                                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
-                                    Thành viên hiện tại
+                                <h4 className="text-xs font-bold text-slate-700 uppercase tracking-[0.2em] mb-4 flex items-center">
+                                    <Users size={16} className="mr-2 text-blue-600" /> Danh sách thành viên ({selectedRoom.SoSinhVienHienTai})
                                 </h4>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[200px] overflow-y-auto sidebar-scroll pr-2">
-                                    {selectedRoom.isMyRoom ? (
-                                        // Nếu là phòng của mình, hiển thị bình thường
-                                        selectedRoom.DanhSachSV ? (
-                                            selectedRoom.DanhSachSV.split(', ').map((name, idx) => (
-                                                <div key={idx} className="px-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-semibold text-slate-700 flex items-center shadow-sm">
-                                                    <div className="w-6 h-6 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center text-[10px] font-black mr-3 uppercase border border-blue-100">
-                                                        {idx + 1}
-                                                    </div>
-                                                    {name}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="col-span-2 py-4 text-center text-slate-400 text-xs italic">
-                                                Phòng hiện đang trống
+                                <div className="space-y-2">
+                                    {selectedRoom.DanhSachSV ? selectedRoom.DanhSachSV.split(', ').map((name, idx) => (
+                                        <div key={idx} className={`px-4 py-3 border rounded-2xl text-sm font-bold flex items-center shadow-sm ${name === user?.name ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-slate-100 text-slate-600'}`}>
+                                            <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black mr-3 uppercase border ${name === user?.name ? 'bg-blue-600 text-white border-blue-600' : 'bg-slate-100 text-slate-400 border-slate-100'}`}>
+                                                {idx + 1}
                                             </div>
-                                        )
-                                    ) : (
-                                        // Nếu không phải phòng của mình, hiển thị thông báo chặn
-                                        <div className="col-span-2 py-6 px-4 text-center bg-slate-50 border border-slate-100 rounded-2xl flex flex-col items-center justify-center">
-                                            <Users size={24} className="text-slate-300 mb-2" />
-                                            <p className="text-slate-500 text-xs font-semibold leading-relaxed">
-                                                Vì lý do bảo mật, bạn không thể xem danh sách <br /> thành viên của phòng khác.
-                                            </p>
+                                            {name} {name === user?.name && "(Bạn)"}
                                         </div>
+                                    )) : (
+                                        <div className="py-4 text-center text-slate-400 text-xs italic">Dữ liệu trống</div>
                                     )}
                                 </div>
-
-                                {selectedRoom.SoSinhVienHienTai < selectedRoom.SucChua && (
-                                    <div className="mt-4 p-3 bg-emerald-50 border border-emerald-100 rounded-2xl text-[11px] font-bold text-emerald-600 flex items-center justify-center uppercase tracking-wider">
-                                        <Info size={14} className="mr-2" /> Còn trống {selectedRoom.SucChua - selectedRoom.SoSinhVienHienTai} chỗ ở
-                                    </div>
-                                )}
                             </div>
                         </div>
                     </div>

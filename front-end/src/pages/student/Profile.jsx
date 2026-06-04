@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     User, Mail, Phone, ShieldCheck, Lock, Eye, EyeOff,
-    Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2, Users
+    Save, Calendar, School, Home, Loader2, KeyRound, Edit2, Undo2, Users, GraduationCap
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -20,15 +20,18 @@ const Profile = () => {
         email: '',
         sdt: '',
         cccd: '',
-        gioiTinh: 1
+        gioiTinh: 1,
+        ngaySinh: '',
+        khoa: '',
+        khoaHoc: ''
     });
+    const [formErrors, setFormErrors] = useState({ email: '', sdt: '', cccd: '' });
 
-    // STATE LƯU LỖI CHO TOOLTIP
-    const [formErrors, setFormErrors] = useState({
-        email: '',
-        sdt: '',
-        cccd: ''
-    });
+    const formatDateForInput = (dateStr) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        return date.toISOString().split('T')[0];
+    };
 
     const fetchProfile = async () => {
         try {
@@ -36,10 +39,13 @@ const Profile = () => {
             const data = await axiosClient.get('/student/profile');
             setProfile(data);
             setEditFormData({
-                email: data.Email || '',
-                sdt: data.SDT || '',
-                cccd: data.CCCD || '',
-                gioiTinh: data.GioiTinh !== undefined ? data.GioiTinh : 1
+                email: String(data.Email || ''),
+                sdt: String(data.SDT || ''),
+                cccd: String(data.CCCD || ''),
+                gioiTinh: data.GioiTinh ?? 1,
+                ngaySinh: data.NgaySinh ? formatDateForInput(data.NgaySinh) : '',
+                khoa: String(data.Khoa || ''),
+                khoaHoc: String(data.KhoaHoc || '')
             });
         } catch (error) {
             toast.error("Không thể tải thông tin cá nhân");
@@ -175,7 +181,7 @@ const Profile = () => {
                             {profile?.HoTen?.split(' ').pop().charAt(0)}
                         </div>
                         <h2 className="text-lg font-bold text-slate-800 leading-tight">{profile?.HoTen}</h2>
-                        <p className="text-[#00529C] font-bold text-[11px] uppercase mt-1 tracking-widest">Mã SV: {profile?.MaSV}</p>
+                        <p className="text-[#00529C] font-bold text-[12px] uppercase mt-1 tracking-widest">Mã SV: {profile?.MaSV}</p>
                     </div>
 
                     <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm">
@@ -238,12 +244,37 @@ const Profile = () => {
 
                         <form onSubmit={handleUpdateProfile} className="space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
-                                {/* CÁC TRƯỜNG CỐ ĐỊNH */}
-                                <InfoItem label="Họ và Tên" value={profile?.HoTen} icon={User} />
-                                <InfoItem label="Mã sinh viên" value={profile?.MaSV} icon={ShieldCheck} />
-                                <InfoItem label="Ngày sinh" value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} icon={Calendar} />
+                                {/* Các trường không thể sửa */}
+                                <InfoItem label="Họ và Tên" value={profile?.HoTen} icon={User} isReadOnly />
+                                <InfoItem label="Mã sinh viên" value={profile?.MaSV} icon={ShieldCheck} isReadOnly />
 
-                                {/* CÁC TRƯỜNG CHO PHÉP SỬA (ĐÃ TÍCH HỢP TOOLTIP VÀ VALIDATION) */}
+
+                                {/* Các trường CÓ THỂ SỬA */}
+                                <EditableItem
+                                    label="Ngày sinh"
+                                    type="date"
+                                    value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'}
+                                    icon={Calendar}
+                                    isEditing={isEditing}
+                                    inputValue={editFormData.ngaySinh}
+                                    onChange={(val) => setEditFormData({ ...editFormData, ngaySinh: val })}
+                                />
+                                <EditableItem
+                                    label="Khoa"
+                                    value={profile?.Khoa}
+                                    icon={School}
+                                    isEditing={isEditing}
+                                    inputValue={editFormData.khoa}
+                                    onChange={(val) => setEditFormData({ ...editFormData, khoa: val })}
+                                />
+                                <EditableItem
+                                    label="Khóa"
+                                    value={profile?.KhoaHoc}
+                                    icon={GraduationCap}
+                                    isEditing={isEditing}
+                                    inputValue={editFormData.khoaHoc}
+                                    onChange={(val) => setEditFormData({ ...editFormData, khoaHoc: val })}
+                                />
                                 <EditableSelect
                                     label="Giới tính"
                                     value={profile?.GioiTinh === 1 ? 'Nam' : (profile?.GioiTinh === 0 ? 'Nữ' : 'Chưa cập nhật')}
@@ -334,8 +365,8 @@ const InfoItem = ({ label, value, icon: Icon }) => (
     </div>
 );
 
-// Component EditableItem CÓ CHỨA TOOLTIP BÁO LỖI
-const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChange, error }) => (
+// Component cho các trường có thể cập nhật
+const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChange, type = "text", error }) => (
     <div className="space-y-1.5">
         <div className="flex items-center text-slate-400 gap-1.5">
             <Icon size={14} />
@@ -344,16 +375,17 @@ const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChang
         {isEditing ? (
             <div className="relative">
                 <input
+                    type={type}
                     className={`w-full px-3 py-2 bg-slate-50 border rounded-xl outline-none text-sm font-semibold text-slate-800 transition-all 
-                        ${error ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-50' : 'border-slate-200 focus:border-blue-500'}`}
+                        ${error ? 'border-red-500 focus:border-red-500' : 'border-slate-200 focus:border-blue-500'}`}
                     value={inputValue}
                     onChange={(e) => onChange(e.target.value)}
                 />
-                {/* TOOLTIP HIỆN RA KHI CÓ LỖI */}
+                {/* TOOLTIP LỖI */}
                 {error && (
-                    <div className="absolute z-10 bottom-full left-2 mb-2 px-3 py-1.5 bg-red-600 text-white text-[11px] font-bold rounded-lg shadow-lg animate-in fade-in zoom-in duration-200 whitespace-nowrap">
-                        <div className="absolute -bottom-1 left-4 w-2 h-2 bg-red-600 rotate-45"></div>
+                    <div className="absolute z-10 bottom-full left-2 mb-2 px-3 py-1 bg-red-600 text-white text-[10px] font-bold rounded-lg shadow-lg whitespace-nowrap">
                         {error}
+                        <div className="absolute -bottom-1 left-4 w-2 h-2 bg-red-600 rotate-45"></div>
                     </div>
                 )}
             </div>

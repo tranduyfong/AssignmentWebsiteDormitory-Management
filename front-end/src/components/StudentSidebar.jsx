@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
     Home, FileSignature, CreditCard, ClipboardEdit,
-    LogOut, ChevronRight, Receipt, BookOpen, Gavel, MessageSquare
+    LogOut, ChevronRight, Receipt, BookOpen, Gavel, MessageSquare, Landmark
 } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, collapsed }) => (
@@ -75,13 +75,9 @@ const StudentSidebar = ({ isOpen }) => {
                 style={{ backgroundColor: humgBlue }}
                 className={`p-5 flex items-center ${isOpen ? 'space-x-4' : 'justify-center'} shadow-md h-24 flex-shrink-0 transition-all duration-300`}
             >
-                <div className="w-12 h-12 bg-white rounded-lg p-1.5 shadow-lg flex-shrink-0 overflow-hidden">
-                    <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_Truong_Dai_hoc_Mo_-_Dia_chat.jpg"
-                        alt="HUMG"
-                        className="w-full h-full object-contain"
-                    />
-                </div>
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg border border-white/20">
+          <Landmark size={30} color={humgBlue}/>
+        </div>
                 {isOpen && (
                     <div className="flex flex-col overflow-hidden animate-in fade-in slide-in-from-left-2 duration-300">
                         <span className="text-white font-black text-lg uppercase whitespace-nowrap tracking-tight">CỔNG SINH VIÊN</span>

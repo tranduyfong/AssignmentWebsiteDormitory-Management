@@ -15,16 +15,12 @@ const AdminNavbar = ({ setSidebarOpen, isSidebarOpen, user }) => {
       </div>
 
       <div className="flex items-center space-x-6">
-        <div className="flex items-center space-x-2">
-            <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Bell size={22} /></button>
-            <button className="p-2 text-slate-400 hover:text-blue-600 transition-colors"><Settings size={22} /></button>
-        </div>
         <div className="flex items-center bg-slate-50 py-1.5 px-4 rounded-2xl border border-slate-100">
           <div className="text-right mr-4 hidden sm:block">
             <p className="text-sm font-black text-slate-900 leading-none">Admin</p>
-            <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">{user?.name || "Chưa có tên"}</p>
+            <p className="text-[10px] font-bold text-[#00529C] uppercase mt-1">{user?.name || "Chưa có tên"}</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg">
+          <div className="w-10 h-10 rounded-xl bg-[#00529C] flex items-center justify-center text-white font-bold shadow-lg">
             <User size={20} />
           </div>
         </div>

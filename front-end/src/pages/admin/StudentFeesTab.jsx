@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
-  Plus, Trash2, X, Save, User, Loader2, CreditCard, 
-  Search, Calendar, Filter, ChevronLeft, ChevronRight 
+import {
+    Plus, Trash2, X, Save, User, Loader2, CreditCard,
+    Search, Calendar, Filter, ChevronLeft, ChevronRight, Info, ChevronDown, ArrowRight, FileSignature
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 const generateSemesters = () => {
     const years = [];
     const currentYear = new Date().getFullYear();
-    for (let i = currentYear - 1; i < currentYear; i++) {
+    for (let i = currentYear - 1; i <= currentYear; i++) {
         const schoolYear = `${i}-${i + 1}`;
         years.push(`Học kỳ I (${schoolYear})`);
         years.push(`Học kỳ II (${schoolYear})`);
@@ -24,18 +24,23 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
     const [isFetching, setIsFetching] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState('Tất cả');
+    const [studentSearch, setStudentSearch] = useState(''); // State tìm kiếm riêng trong Modal
+    const [selectedStudent, setSelectedStudent] = useState(null)
 
+
+    const [activeContract, setActiveContract] = useState(null);
+    const [isFetchingContract, setIsFetchingContract] = useState(false);
     // --- 1. State cho Phân trang ---
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10; 
+    const itemsPerPage = 10;
 
     const semesters = generateSemesters();
 
-    const [formData, setFormData] = useState({ 
-        maSV: '', 
-        maPhong: '', 
-        period: semesters[0], 
-        amount: 2000000 
+    const [formData, setFormData] = useState({
+        maSV: '',
+        maPhong: '',
+        period: semesters[0],
+        amount: 0
     });
 
     // --- 2. Reset về trang 1 khi tìm kiếm hoặc lọc ---
@@ -55,20 +60,73 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
             setIsFetching(false);
         }
     };
+    const filteredStudentList = useMemo(() => {
+        if (!studentSearch) return studentList;
+        return studentList.filter(s =>
+            s.HoTen.toLowerCase().includes(studentSearch.toLowerCase()) ||
+            s.MaSV.toLowerCase().includes(studentSearch.toLowerCase()) ||
+            s.TenPhong.toLowerCase().includes(studentSearch.toLowerCase())
+        );
+    }, [studentList, studentSearch]);
 
-    const handleSelectStudent = (msv) => {
-        const student = studentList.find(s => s.MaSV === msv);
-        if (student) {
-            setFormData({ ...formData, maSV: msv, maPhong: student.MaPhong });
+    const handleConfirmCash = async (maHoaDon) => {
+        if (!window.confirm("Bạn có chắc chắn muốn xác nhận sinh viên đã đóng tiền mặt?")) return;
+
+        try {
+            await axiosClient.put(`/admin/invoices/${maHoaDon}/confirm-cash`);
+            toast.success("Xác nhận thành công!");
+            refresh(); // Gọi lại hàm lấy dữ liệu để update bảng
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Lỗi khi xác nhận!");
         }
     };
 
+    const handleSelect = async (student) => {
+        setSelectedStudent(student);
+        setIsFetchingContract(true);
+        try {
+            const contract = await axiosClient.get(`/admin/contracts/active/${student.MaSV}`);
+            setActiveContract(contract);
+            setFormData({ ...formData, maSV: student.MaSV, maPhong: student.MaPhong });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Sinh viên không có hợp đồng hiệu lực");
+            setSelectedStudent(null); // Không cho chọn nếu không có hợp đồng
+        } finally {
+            setIsFetchingContract(false);
+            setStudentSearch('');
+        }
+    };
+    const previewData = useMemo(() => {
+        if (!activeContract) return null;
+        const start = new Date(activeContract.NgayBatDau);
+        const end = new Date(activeContract.NgayKetThuc);
+
+        // Tính tổng số tháng
+        let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+        if (end.getDate() > start.getDate()) diffMonths++;
+        if (diffMonths <= 0) diffMonths = 1;
+
+        const unitPrice = 500000; // Đơn giá hàng tháng
+        const totalContractValue = diffMonths * unitPrice;
+        const alreadyBilled = Number(activeContract.DaLapHoaDon || 0); // Lấy từ Backend trả về
+        const finalAmount = totalContractValue - alreadyBilled;
+
+        return {
+            months: diffMonths,
+            totalContractValue: totalContractValue,
+            alreadyBilled: alreadyBilled,
+            amountToBill: finalAmount, // Số tiền thực tế sẽ thu thêm
+            startDate: start.toLocaleDateString('vi-VN'),
+            endDate: end.toLocaleDateString('vi-VN')
+        };
+    }, [activeContract]);
+
     const filteredData = useMemo(() => {
         return data.filter(item => {
-            const matchesSearch = item.TenSinhVien?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                                  item.MaSV?.toLowerCase().includes(searchQuery.toLowerCase());
-            
-            const matchesStatus = filterStatus === 'Tất cả' || 
+            const matchesSearch = item.TenSinhVien?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.MaSV?.toLowerCase().includes(searchQuery.toLowerCase());
+
+            const matchesStatus = filterStatus === 'Tất cả' ||
                 (filterStatus === 'Đã thanh toán' && item.TrangThaiThanhToan === 1) ||
                 (filterStatus === 'Chờ thanh toán' && item.TrangThaiThanhToan === 0);
 
@@ -84,21 +142,25 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
 
     const handleSave = async (e) => {
         e.preventDefault();
-        if (!formData.maSV || !formData.maPhong) return toast.error("Vui lòng chọn sinh viên");
-        
+        if (!formData.maSV) return toast.error("Vui lòng chọn sinh viên");
+        if (!formData.period) return toast.error("Vui lòng chọn học kỳ");
+
+        const loadingToast = toast.loading("Đang lập hóa đơn...");
         try {
             await axiosClient.post('/admin/invoices', {
                 maPhong: formData.maPhong,
                 maSV: formData.maSV,
+                maDienNuoc: null, // Tiền phòng không có mã điện nước
                 loaiHoaDon: 'Tiền phòng',
                 kyHoaDon: formData.period,
-                soTien: formData.amount
+                soTien: 0 // Gửi 0 vì Backend sẽ tự SELECT HopDong để tính tiền thực tế
             });
-            toast.success("Lập hóa đơn thành công");
+
+            toast.success("Hệ thống đã tự động tính phí dựa trên hợp đồng và tạo hóa đơn thành công!", { id: loadingToast, duration: 4000 });
             setIsModalOpen(false);
             refresh();
-        } catch (error) { 
-            toast.error(error.response?.data?.message || "Lỗi khi lưu"); 
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Lỗi khi tạo hóa đơn tiền phòng", { id: loadingToast });
         }
     };
 
@@ -110,20 +172,20 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
         if (window.confirm("Bạn có chắc chắn muốn xóa hóa đơn tiền phòng này?")) {
             try {
                 await axiosClient.delete(`/admin/invoices/${id}`);
-                toast.success("Đã xóa hóa đơn");
+                toast.success("Đã xóa hóa đơn tiền phòng");
                 refresh();
             } catch (error) {
-                toast.error(error.response?.data?.message || "Lỗi khi xóa");
+                toast.error(error.response?.data?.message || "Lỗi khi xóa hóa đơn tiền phòng");
             }
         }
     };
 
     return (
-      <div className="space-y-6 animate-in fade-in duration-500 font-sans pb-10">
+        <div className="space-y-6 animate-in fade-in duration-500 font-sans pb-10">
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-end gap-4">
-                <button 
-                    onClick={handleOpenModal} 
+                <button
+                    onClick={handleOpenModal}
                     className="flex items-center justify-center px-5 py-2.5 bg-[#00529C] text-white rounded-xl font-semibold shadow-md hover:bg-blue-700 transition-all active:scale-95 text-sm"
                 >
                     <Plus size={18} className="mr-2" /> Thêm tiền phòng
@@ -134,18 +196,18 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
             <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 w-full font-medium">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                    <input 
-                        type="text" 
+                    <input
+                        type="text"
                         placeholder="Tìm theo tên hoặc mã sinh viên..."
                         className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-transparent rounded-xl focus:bg-white focus:border-[#00529C] outline-none transition-all"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                
+
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <Filter size={16} className="text-slate-400 hidden md:block" />
-                    <select 
+                    <select
                         className="w-full md:w-56 p-2.5 bg-slate-50 border border-slate-100 rounded-xl outline-none text-sm font-semibold text-slate-600 focus:border-[#00529C] cursor-pointer"
                         value={filterStatus}
                         onChange={(e) => setFilterStatus(e.target.value)}
@@ -171,7 +233,7 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-slate-700 font-medium">
                             {isLoading ? (
-                                <tr><td colSpan="5" className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-300"/></td></tr>
+                                <tr><td colSpan="5" className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-300" /></td></tr>
                             ) : currentItems.length === 0 ? (
                                 <tr><td colSpan="5" className="py-10 text-center text-slate-400">Chưa có hóa đơn tiền phòng nào.</td></tr>
                             ) : currentItems.map(f => (
@@ -192,13 +254,27 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-right">
-                                        <button 
-                                            onClick={() => handleDeleteInvoice(f.MaHoaDon, f.TrangThaiThanhToan)}
-                                            disabled={f.TrangThaiThanhToan === 1}
-                                            className={`p-2 rounded-lg transition-all border ${f.TrangThaiThanhToan === 1 ? 'text-slate-200 border-slate-100 cursor-not-allowed' : 'text-red-500 bg-red-50 border-red-100 hover:bg-red-100'}`}
-                                        >
-                                            <Trash2 size={16}/>
-                                        </button>
+                                        <div className="flex justify-end gap-2">
+                                            {/* Nút xác nhận tiền mặt (Chỉ hiện khi chưa thanh toán) */}
+                                            {f.TrangThaiThanhToan === 0 && (
+                                                <button
+                                                    onClick={() => handleConfirmCash(f.MaHoaDon)}
+                                                    className="px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase border border-emerald-100 hover:bg-emerald-100 transition-all"
+                                                    title="Xác nhận đóng tiền mặt"
+                                                >
+                                                    Thu tiền mặt
+                                                </button>
+                                            )}
+
+                                            {/* Nút Xóa (Giữ nguyên logic của bạn) */}
+                                            <button
+                                                onClick={() => handleDeleteInvoice(f.MaHoaDon, f.TrangThaiThanhToan)}
+                                                disabled={f.TrangThaiThanhToan === 1}
+                                                className={`p-2 rounded-lg transition-all border ${f.TrangThaiThanhToan === 1 ? 'text-slate-200 border-slate-100 cursor-not-allowed' : 'text-red-500 bg-red-50 border-red-100 hover:bg-red-100'}`}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
@@ -220,16 +296,15 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                             >
                                 <ChevronLeft size={16} />
                             </button>
-                            
+
                             {[...Array(totalPages)].map((_, i) => (
                                 <button
                                     key={i + 1}
                                     onClick={() => setCurrentPage(i + 1)}
-                                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${
-                                        currentPage === i + 1 
-                                        ? "bg-[#00529C] text-white" 
+                                    className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === i + 1
+                                        ? "bg-[#00529C] text-white"
                                         : "text-slate-600 hover:bg-white"
-                                    }`}
+                                        }`}
                                 >
                                     {i + 1}
                                 </button>
@@ -249,36 +324,145 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
 
             {/* Modal */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-[2px] animate-in fade-in duration-200">
-                    <div className="bg-white w-full max-w-md rounded-[24px] shadow-2xl overflow-hidden p-8 animate-in zoom-in-95">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="font-bold text-slate-800 uppercase text-xs">Lập phí phòng cá nhân</h3>
-                            <button onClick={() => setIsModalOpen(false)}><X size={18}/></button>
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px] animate-in fade-in duration-200">
+                    <div className="bg-white w-full max-w-lg rounded-[32px] shadow-2xl overflow-hidden animate-in zoom-in-95 flex flex-col max-h-[90vh]">
+
+                        {/* Header Modal */}
+                        <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h3 className="font-bold text-slate-800 text-lg">Lập hóa đơn tiền phòng</h3>
+
+                            </div>
+                            <button
+                                onClick={() => { setIsModalOpen(false); setSelectedStudent(null); setActiveContract(null); }}
+                                className="p-2 hover:bg-white rounded-full transition-all"
+                            >
+                                <X size={20} className="text-slate-400" />
+                            </button>
                         </div>
-                        <form onSubmit={handleSave} className="space-y-5">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Chọn sinh viên</label>
-                                <select required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" value={formData.maSV} onChange={e => handleSelectStudent(e.target.value)}>
-                                    <option value="">-- Danh sách sinh viên nội trú --</option>
-                                    {studentList.map(sv => (
-                                        <option key={sv.MaSV} value={sv.MaSV}>{sv.MaSV} - {sv.HoTen} (P.{sv.TenPhong})</option>
-                                    ))}
-                                </select>
+
+                        <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Chọn sinh viên</label>
+                                {selectedStudent ? (
+                                    <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+                                        <div>
+                                            <div className="font-bold text-slate-900">{selectedStudent.HoTen}</div>
+                                            <div className="text-xs text-blue-600 font-semibold uppercase tracking-tighter">MSV: {selectedStudent.MaSV} • Phòng {selectedStudent.TenPhong}</div>
+                                        </div>
+                                        <button type="button" onClick={() => { setSelectedStudent(null); setActiveContract(null); }} className="text-xs font-bold text-red-500 hover:underline uppercase">Thay đổi</button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        <div className="relative">
+                                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <input type="text" placeholder="Tìm tên hoặc mã sinh viên..." className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#00529C] text-sm font-medium" value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} />
+                                        </div>
+                                        <div className="border border-slate-100 rounded-2xl max-h-40 overflow-y-auto bg-slate-50/30 divide-y divide-slate-100">
+                                            {isFetching ? <div className="p-10 text-center"><Loader2 size={20} className="animate-spin mx-auto text-slate-300" /></div> :
+                                                filteredStudentList.map(sv => (
+                                                    <div key={sv.MaSV} onClick={() => handleSelect(sv)} className="flex items-center justify-between p-3 hover:bg-white cursor-pointer transition-all">
+                                                        <div>
+                                                            <div className="text-sm font-bold text-slate-700">{sv.HoTen}</div>
+                                                            <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">MSV: {sv.MaSV}</div>
+                                                        </div>
+                                                        <div className="text-[10px] font-black text-[#00529C] bg-blue-50 px-2 py-1 rounded-md">P.{sv.TenPhong}</div>
+                                                    </div>
+                                                ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Học kỳ thu phí</label>
-                                <select required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-700" value={formData.period} onChange={e => setFormData({...formData, period: e.target.value})}>
-                                    {semesters.map((s, index) => <option key={index} value={s}>{s}</option>)}
-                                </select>
-                            </div>
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Số tiền (VNĐ)</label>
-                                <div className="relative">
-                                    <input readOnly type="number" className="w-full px-4 py-2.5 bg-blue-50 border border-blue-100 rounded-xl outline-none font-black text-slate-500 cursor-not-allowed" value={formData.amount} />
-                                    <CreditCard className="absolute right-3 top-2.5 text-blue-300" size={18} />
+
+                            {/* --- PHẦN MỚI: PREVIEW HỢP ĐỒNG VÀ SỐ TIỀN --- */}
+                            {isFetchingContract ? (
+                                <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center animate-pulse">
+                                    <Loader2 className="animate-spin text-blue-500 mb-2" size={20} />
+                                    <span className="text-[10px] font-bold text-slate-400 uppercase font-sans">Đang tính toán số tiền...</span>
+                                </div>
+                            ) : previewData && (
+                                <div className="bg-white rounded-[14px] p-6 border-2 border-blue-100 shadow-sm relative overflow-hidden group font-sans">
+
+                                    <div className="relative z-10 space-y-4">
+                                        {/* Header */}
+                                        <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                                            <span className="text-[11px] font-bold uppercase tracking-widest text-slate-800">Thông tin hợp đồng</span>
+                                            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">Hiệu lực</span>
+                                        </div>
+
+                                        {/* Thời gian */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <Calendar size={14} className="text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-700">{previewData.startDate}</span>
+                                                <ArrowRight size={12} className="text-slate-400" />
+                                                <span className="text-xs font-bold text-slate-700">{previewData.endDate}</span>
+                                            </div>
+                                            <span className="text-xs font-bold text-slate-500">{previewData.months} tháng</span>
+                                        </div>
+
+                                        {/* PHẦN CHI TIẾT TÍNH TOÁN MỚI BỔ SUNG */}
+                                        <div className="space-y-2 py-3 border-y border-slate-50">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Tổng giá trị hợp đồng:</span>
+                                                <span className="text-xs font-bold text-slate-700">{previewData.totalContractValue.toLocaleString()}đ</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Đã lập hóa đơn trước đó:</span>
+                                                <span className="text-xs font-bold text-emerald-600">-{previewData.alreadyBilled.toLocaleString()}đ</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Số tiền chênh lệch cuối cùng */}
+                                        <div className="pt-1 flex items-end justify-between">
+                                            <div>
+                                                <p className="text-[12px] font-bold uppercase text-blue-500 tracking-wider">Số tiền phòng cần thu:</p>
+
+                                            </div>
+                                            <h2 className="text-2xl font-black tracking-tighter text-[#00529C]">
+                                                {previewData.amountToBill.toLocaleString()}
+                                                <span className="text-sm ml-1 font-bold not-italic text-slate-400 ">đ</span>
+                                            </h2>
+                                        </div>
+
+
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* CHỌN HỌC KỲ */}
+                            <div className="space-y-3">
+                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
+                                    Học kỳ
+                                </label>
+                                <div className="relative group"> {/* Thêm relative ở đây */}
+                                    <select
+                                        required
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#00529C] font-bold text-slate-700 text-sm appearance-none cursor-pointer transition-all"
+                                        value={formData.period}
+                                        onChange={e => setFormData({ ...formData, period: e.target.value })}
+                                    >
+                                        {semesters.map((s, index) => <option key={index} value={s}>{s}</option>)}
+                                    </select>
+
+                                    {/* ICON CHEVRON XUỐNG */}
+                                    <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#00529C] transition-colors">
+                                        <ChevronDown size={18} />
+                                    </div>
                                 </div>
                             </div>
-                            <button type="submit" className="w-full py-4 bg-[#00529C] text-white rounded-xl font-bold uppercase text-[10px] shadow-lg shadow-blue-200 active:scale-95 transition-all">Xác nhận tạo hóa đơn</button>
+
+                            {/* NÚT XÁC NHẬN */}
+                            <div className="pt-2">
+                                <button
+                                    type="submit"
+                                    disabled={!selectedStudent}
+                                    className="w-full py-4 bg-[#00529C] text-white rounded-[20px] font-bold uppercase text-xs shadow-xl shadow-blue-200 active:scale-[0.98] transition-all disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+                                >
+                                    Xác nhận lập hóa đơn
+                                </button>
+                            </div>
                         </form>
                     </div>
                 </div>

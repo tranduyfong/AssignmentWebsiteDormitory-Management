@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Lock, User, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { Lock, User, ArrowRight, Eye, EyeOff,Landmark } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import { useEffect } from 'react';
 import toast from 'react-hot-toast';
@@ -52,21 +52,17 @@ const Login = () => {
 
     return (
         <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans animate-in fade-in duration-500">
-            <div className="sm:mx-auto sm:w-full sm:max-w-md">
-                <div className="flex justify-center">
-                    <div className="w-20 h-20 bg-white rounded-2xl p-2 shadow-xl border border-white/20">
-                        <img
-                            src="https://upload.wikimedia.org/wikipedia/commons/e/e0/Logo_Truong_Dai_hoc_Mo_-_Dia_chat.jpg"
-                            alt="HUMG Logo"
-                            className="w-full h-full object-contain"
-                        />
+            <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
+                 <div className="flex justify-center">
+                    <div className="w-24 h-24 bg-[#00529C] rounded-[32px] flex items-center justify-center shadow-2xl border border-white/10">
+                        <Landmark size={50} className="text-white" />
                     </div>
                 </div>
-                <h2 className="mt-6 text-center text-3xl font-extrabold text-slate-900 tracking-tight">
-                    HUMG DORM
+                <h2 className="mt-8 text-3xl font-black text-slate-900 tracking-tight uppercase">
+                    Dorm Management
                 </h2>
                 <p className="mt-2 text-center text-sm font-bold text-slate-500 uppercase tracking-widest">
-                    Hệ thống quản lý Ký túc xá
+                    Hệ thống quản lý Ký túc xá sinh viên
                 </p>
             </div>
 

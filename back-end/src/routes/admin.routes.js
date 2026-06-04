@@ -52,6 +52,7 @@ router.delete('/utilities/:id', financeController.deleteUtility);
 router.get('/invoices', financeController.getAllInvoices);
 router.post('/invoices', financeController.createInvoice);
 router.delete('/invoices/:id', financeController.deleteInvoice);
+router.put('/invoices/:id/confirm-cash', financeController.confirmCashPayment);
 
 // 4. Vận hành (Nội quy, Vi phạm, Sự cố)
 
@@ -64,8 +65,8 @@ router.delete('/rules/:id', operationController.deleteRule);
 // -- Vi phạm & Sự cố (Giữ nguyên) --
 router.get('/violations', operationController.getAllViolations);
 router.post('/violations', operationController.recordViolation);
-router.put('/violations/:id/status', operationController.updateViolationStatus); 
-router.delete('/violations/:id', operationController.deleteViolation);     
+router.put('/violations/:id/status', operationController.updateViolationStatus);
+router.delete('/violations/:id', operationController.deleteViolation);
 router.put('/incidents/:id/resolve', operationController.updateIncidentStatus);
 router.get('/incidents', operationController.getAllIncidents);
 
@@ -73,6 +74,7 @@ router.get('/incidents', operationController.getAllIncidents);
 router.get('/contracts', contractController.getAllContracts);
 router.put('/contracts/:id/extend', contractController.extendContract);
 router.put('/contracts/:id/terminate', contractController.terminateContract);
+router.get('/contracts/active/:msv', contractController.getActiveContractBySV);
 
 // 6. Thống kê - Báo cáo (Dashboard)
 router.get('/dashboard/summary', dashboardController.getDashboardSummary);

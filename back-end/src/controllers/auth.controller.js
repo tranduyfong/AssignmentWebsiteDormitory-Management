@@ -14,7 +14,7 @@ const transporter = nodemailer.createTransport({
 
 // 1. ĐĂNG KÝ TÀI KHOẢN & GỬI MAIL
 exports.register = async (req, res) => {
-    const { msv, fullname, email, password } = req.body;
+    const { msv, fullname, email, password, gioiTinh } = req.body;
     const connection = await pool.getConnection();
 
     try {
@@ -41,8 +41,8 @@ exports.register = async (req, res) => {
 
         const tempCCCD = `TEMP_${msv}`;
         await connection.execute(
-            'INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, CCCD) VALUES (?, ?, ?, ?, ?)',
-            [msv, maTK, fullname, email, tempCCCD]
+            'INSERT INTO SinhVien (MaSV, MaTK, HoTen, Email, CCCD, GioiTinh) VALUES (?, ?, ?, ?, ?, ?)',
+            [msv, maTK, fullname, email, tempCCCD, gioiTinh]
         );
 
         // --- TẠO TOKEN XÁC NHẬN VÀ GỬI MAIL ---
@@ -53,14 +53,14 @@ exports.register = async (req, res) => {
         const verifyUrl = `http://localhost:5000/api/auth/verify-email?token=${verifyToken}`;
 
         const mailOptions = {
-            from: `"Ban Quản Lý KTX HUMG" <${process.env.EMAIL_USER}>`,
+            from: `"Ban Quản Lý KTX" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Xác nhận đăng ký tài khoản Ký túc xá HUMG',
+            subject: 'Xác nhận đăng ký tài khoản Ký túc xá',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
                     <h2 style="color: #00529C; text-align: center;">Xác nhận tài khoản Ký túc xá</h2>
                     <p>Xin chào <strong>${fullname}</strong>,</p>
-                    <p>Cảm ơn bạn đã đăng ký tài khoản trên hệ thống quản lý Ký túc xá HUMG. Để hoàn tất đăng ký và kích hoạt tài khoản, vui lòng nhấn vào nút bên dưới (Link có hiệu lực trong 15 phút):</p>
+                    <p>Cảm ơn bạn đã đăng ký tài khoản trên hệ thống quản lý Ký túc xá. Để hoàn tất đăng ký và kích hoạt tài khoản, vui lòng nhấn vào nút bên dưới (Link có hiệu lực trong 15 phút):</p>
                     <div style="text-align: center; margin: 30px 0;">
                         <a href="${verifyUrl}" style="background-color: #00529C; color: white; padding: 12px 24px; text-decoration: none; font-weight: bold; border-radius: 8px;">Kích hoạt tài khoản</a>
                     </div>
@@ -193,9 +193,9 @@ exports.forgotPassword = async (req, res) => {
 
         // 4. Gửi Email
         const mailOptions = {
-            from: `"Ban Quản Lý KTX HUMG" <${process.env.EMAIL_USER}>`,
+            from: `"Ban Quản Lý KTX" <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: 'Mã khôi phục mật khẩu Ký túc xá HUMG',
+            subject: 'Mã khôi phục mật khẩu Ký túc xá',
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
                     <h2 style="color: #00529C; text-align: center;">Khôi phục mật khẩu</h2>

@@ -17,6 +17,7 @@ router.post('/create-payment-url', studentController.createPaymentUrl);
 
 // Các API bên dưới tự động được bảo vệ
 router.get('/rooms', studentController.getRoomList);
+router.get('/zones', studentController.getZones);
 router.get('/my-contracts', studentController.getMyContracts);
 router.post('/register-room', studentController.submitRegistration);
 router.get('/my-invoices', studentController.getMyInvoices);

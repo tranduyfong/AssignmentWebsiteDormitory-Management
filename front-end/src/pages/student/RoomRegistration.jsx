@@ -1,26 +1,71 @@
 import React, { useState, useEffect } from 'react';
-import { Send, Info, CheckCircle2 } from 'lucide-react';
+import { Send, Info, CheckCircle2, Loader2,ChevronDown  } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 
+
+const getDynamicSemesters = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0 - 11 (Tháng 1 là 0)
+
+    let startYear, endYear;
+
+    // Nếu là từ tháng 8 trở đi, thường là đang đăng ký cho năm học mới
+    // Nếu là đầu năm (trước tháng 8), vẫn thuộc chu kỳ năm học cũ
+    if (currentMonth >= 7) { // Từ tháng 8 đến tháng 12
+        startYear = currentYear;
+        endYear = currentYear + 1;
+    } else { // Từ tháng 1 đến tháng 7
+        startYear = currentYear - 1;
+        endYear = currentYear;
+    }
+
+    const schoolYear = `${startYear}-${endYear}`;
+    return [
+        `Kỳ I (${schoolYear})`,
+        `Kỳ II (${schoolYear})`,
+        `Kỳ Hè (${schoolYear})`
+    ];
+};
+
 const RoomRegistration = () => {
+     const semesterOptions = getDynamicSemesters();
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
     // Lấy thông tin user từ localStorage
     const [userInfo, setUserInfo] = useState({});
+     const [zones, setZones] = useState([]); 
+    const [isLoadingZones, setIsLoadingZones] = useState(true);
 
-    const [formData, setFormData] = useState({
-        hocKy: 'Kỳ I (2025-2026)',
+   const [formData, setFormData] = useState({
+        hocKy: semesterOptions[0], // Lấy kỳ đầu tiên làm mặc định
         nguyenVongKhu: '',
         nguyenVongLoaiPhong: 'Phòng 4 người',
         ghiChu: ''
     });
+
+    
+    
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
             setUserInfo(JSON.parse(storedUser));
         }
+        const fetchZones = async () => {
+            try {
+                setIsLoadingZones(true);
+
+                const res = await axiosClient.get('/student/zones'); 
+                setZones(res);
+            } catch (error) {
+                console.error("Lỗi lấy danh sách khu:", error);
+            } finally {
+                setIsLoadingZones(false);
+            }
+        };
+        fetchZones();
     }, []);
 
     const handleSubmit = async (e) => {
@@ -94,14 +139,16 @@ const RoomRegistration = () => {
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Học kỳ đăng ký</label>
                             <select
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all font-medium text-slate-700"
-                                value={formData.hocKy}
-                                onChange={(e) => setFormData({ ...formData, hocKy: e.target.value })}
-                            >
-                                <option value="Kỳ I (2025-2026)">Kỳ I (2025-2026)</option>
-                                <option value="Kỳ II (2025-2026)">Kỳ II (2025-2026)</option>
-                                <option value="Kỳ Hè (2025-2026)">Kỳ Hè (2025-2026)</option>
-                            </select>
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all font-medium text-slate-700"
+                value={formData.hocKy}
+                onChange={(e) => setFormData({ ...formData, hocKy: e.target.value })}
+            >
+                {semesterOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                        {opt}
+                    </option>
+                ))}
+            </select>
                         </div>
                     </div>
                 </div>
@@ -110,18 +157,31 @@ const RoomRegistration = () => {
                     <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-2 uppercase tracking-wider">2. Nguyện vọng xếp phòng</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Chọn Khu vực</label>
-                            <select
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none font-medium text-slate-700"
-                                value={formData.nguyenVongKhu}
-                                onChange={(e) => setFormData({ ...formData, nguyenVongKhu: e.target.value })}
-                                required
-                            >
-                                <option value="">-- Chọn khu --</option>
-                                <option value="Khu A">Khu A</option>
-                                <option value="Khu B">Khu B</option>
-                            </select>
-                        </div>
+    <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Chọn Khu vực</label>
+    <div className="relative">
+        <select
+            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-[#00529C] outline-none font-medium text-slate-700 transition-all" // Đã xóa appearance-none
+            value={formData.nguyenVongKhu}
+            onChange={(e) => setFormData({ ...formData, nguyenVongKhu: e.target.value })}
+            required
+            disabled={isLoadingZones}
+        >
+            <option value="">{isLoadingZones ? "Đang tải danh sách..." : "-- Chọn khu --"}</option>
+            {zones.map((zone) => (
+                <option key={zone.MaKhu} value={zone.TenKhu}>
+                    {zone.TenKhu}
+                </option>
+            ))}
+        </select>
+        
+        {/* Chỉ hiện Loader khi đang tải, khi tải xong để trình duyệt tự hiện mũi tên */}
+        {isLoadingZones && (
+            <div className="absolute right-3 top-2.5 pointer-events-none">
+                <Loader2 size={18} className="animate-spin text-slate-400" />
+            </div>
+        )}
+    </div>
+</div>
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Loại phòng</label>
                             <select

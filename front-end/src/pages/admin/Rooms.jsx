@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import {
   Plus, Search, Edit, Trash2, Home, Users,
   CheckCircle2, Hammer, Building2,
-  User, X, LayoutGrid, Loader2, AlertTriangle,Filter
+  User, X, LayoutGrid, Loader2, AlertTriangle, Filter
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
-  const [buildings, setBuildings] = useState([]); 
+  const [buildings, setBuildings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,7 +24,7 @@ const Rooms = () => {
     TenPhong: '',
     LoaiPhong: 'Phòng 4 người',
     SucChua: 4,
-    GioiTinh: 1 
+    GioiTinh: 1
   });
 
   const fetchData = async () => {
@@ -59,14 +59,14 @@ const Rooms = () => {
     }
 
     // 2. Xác nhận thao tác
-    const confirmMsg = isMaintenance 
-        ? `Kết thúc bảo trì và mở lại phòng ${room.TenPhong}?` 
-        : `Xác nhận khóa phòng ${room.TenPhong} để bảo trì?`;
+    const confirmMsg = isMaintenance
+      ? `Kết thúc bảo trì và mở lại phòng ${room.TenPhong}?`
+      : `Xác nhận khóa phòng ${room.TenPhong} để bảo trì?`;
 
     if (window.confirm(confirmMsg)) {
       try {
-        await axiosClient.put(`/admin/rooms/${room.MaPhong}/status`, { 
-          trangThai: nextStatus 
+        await axiosClient.put(`/admin/rooms/${room.MaPhong}/status`, {
+          trangThai: nextStatus
         });
         toast.success(`Phòng ${room.TenPhong}: ${nextStatus}`);
         fetchData();
@@ -91,7 +91,7 @@ const Rooms = () => {
       setEditingRoom(null);
       setFormData({
         MaPhong: '',
-        MaToaNha: buildings.length > 0 ? buildings[0].MaToaNha : '',
+        MaToaNha: '',
         TenPhong: '',
         LoaiPhong: 'Phòng 4 người',
         SucChua: 4,
@@ -110,7 +110,7 @@ const Rooms = () => {
         loaiPhong: formData.LoaiPhong,
         sucChua: formData.SucChua,
         gioiTinh: formData.GioiTinh,
-        tang: 1, 
+        tang: 1,
         trangThai: editingRoom ? editingRoom.TrangThai : 'Trống'
       };
 
@@ -141,16 +141,16 @@ const Rooms = () => {
     }
   };
 
- const filteredRooms = rooms.filter(r => {
+  const filteredRooms = rooms.filter(r => {
     const matchesSearch = r.TenPhong?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesArea = filterArea === 'Tất cả' || r.TenKhu === filterArea;
     const matchesBuilding = filterBuilding === 'Tất cả' || r.TenToaNha === filterBuilding;
     return matchesSearch && matchesArea && matchesBuilding;
   });
-    const uniqueAreas = [...new Set(rooms.map(r => r.TenKhu))].filter(Boolean);
+  const uniqueAreas = [...new Set(rooms.map(r => r.TenKhu))].filter(Boolean);
 
-    const availableBuildingsForFilter = filterArea === 'Tất cả' 
-    ? buildings 
+  const availableBuildingsForFilter = filterArea === 'Tất cả'
+    ? buildings
     : buildings.filter(b => b.TenKhu === filterArea);
 
   const isRoomOccupied = editingRoom && editingRoom.SoSinhVienHienTai > 0;
@@ -188,7 +188,7 @@ const Rooms = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto font-semibold text-slate-600">
           <div className="flex items-center gap-2">
             <Filter size={14} className="text-slate-400 hidden sm:block" />
@@ -221,7 +221,14 @@ const Rooms = () => {
 
       {isLoading ? (
         <div className="text-center py-20"><Loader2 className="animate-spin mx-auto text-slate-300" size={40} /></div>
-      ) : (
+      ) : filteredRooms.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 rounded-[24px]">
+          <div className="p-4 bg-slate-50 rounded-full mb-3">
+            <Home size={32} className="text-slate-300" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-600">Không tìm thấy phòng</h3>
+          <p className="text-[11px] font-medium text-slate-400 mt-1">Danh sách phòng trống hoặc không khớp với bộ lọc</p>
+        </div>) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
           {filteredRooms.map((room) => {
             const isMaintenance = room.TrangThai === 'Bảo trì';
@@ -263,8 +270,8 @@ const Rooms = () => {
                     </div>
                     <div className="flex gap-1">
                       {/* NÚT BẢO TRÌ NHANH */}
-                      <button 
-                        onClick={() => handleToggleMaintenance(room)} 
+                      <button
+                        onClick={() => handleToggleMaintenance(room)}
                         title={isMaintenance ? "Kết thúc bảo trì" : "Bắt đầu bảo trì"}
                         className={`p-1.5 rounded-lg transition-all border ${isMaintenance ? 'bg-amber-500 text-white border-amber-600' : 'bg-slate-50 text-amber-600 border-amber-100 hover:bg-amber-100'}`}
                       >
@@ -317,7 +324,7 @@ const Rooms = () => {
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Giới tính phòng</label>
                 <select
-                disabled={isRoomOccupied}
+                  disabled={isRoomOccupied}
                   className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 ${isRoomOccupied ? 'bg-slate-100 cursor-not-allowed text-slate-400' : 'bg-slate-50'}`}
                   value={formData.GioiTinh}
                   onChange={(e) => setFormData({ ...formData, GioiTinh: parseInt(e.target.value) })}
@@ -329,21 +336,21 @@ const Rooms = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Loại phòng</label>
-                    <select 
-                    
+                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Loại phòng</label>
+                  <select
+
                     disabled={isRoomOccupied}
-                      className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 ${isRoomOccupied ? 'bg-slate-100 cursor-not-allowed text-slate-400' : 'bg-slate-50'}`}
+                    className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 ${isRoomOccupied ? 'bg-slate-100 cursor-not-allowed text-slate-400' : 'bg-slate-50'}`}
                     value={formData.LoaiPhong} onChange={(e) => setFormData({ ...formData, LoaiPhong: e.target.value })}>
-                        <option value="Phòng 4 người">4 Người</option>
-                        <option value="Phòng 6 người">6 Người</option>
-                        <option value="Phòng 8 người">8 Người</option>
-                    </select>
+                    <option value="Phòng 4 người">4 Người</option>
+                    <option value="Phòng 6 người">6 Người</option>
+                    <option value="Phòng 8 người">8 Người</option>
+                  </select>
                 </div>
                 <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Sức chứa</label>
-                    <input type="number" disabled={isRoomOccupied}
-                      className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 ${isRoomOccupied ? 'bg-slate-100 cursor-not-allowed text-slate-400' : 'bg-slate-50'}`} value={formData.SucChua} onChange={(e) => setFormData({ ...formData, SucChua: parseInt(e.target.value) })} />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase ml-1">Sức chứa</label>
+                  <input type="number" disabled={isRoomOccupied}
+                    className={`w-full px-4 py-2.5 border border-slate-200 rounded-xl outline-none focus:border-blue-500 ${isRoomOccupied ? 'bg-slate-100 cursor-not-allowed text-slate-400' : 'bg-slate-50'}`} value={formData.SucChua} onChange={(e) => setFormData({ ...formData, SucChua: parseInt(e.target.value) })} />
                 </div>
               </div>
 

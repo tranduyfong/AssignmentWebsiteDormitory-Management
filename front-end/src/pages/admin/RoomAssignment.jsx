@@ -57,7 +57,7 @@ const RoomAssignment = () => {
         maPhong: maPhong
       });
 
-      alert(`Đã phân sinh viên ${selectedReg.HoTen} vào phòng ${maPhong} thành công!`);
+      alert(`Đã phân sinh viên ${selectedReg.HoTen} vào phòng thành công!`);
       setSelectedReg(null);
       fetchData();
     } catch (error) {
@@ -219,8 +219,8 @@ const RoomAssignment = () => {
                   key={i + 1}
                   onClick={() => setCurrentPage(i + 1)}
                   className={`w-7 h-7 rounded-lg text-xs font-bold transition-all ${currentPage === i + 1
-                      ? "bg-[#00529C] text-white shadow-md shadow-blue-100"
-                      : "text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
+                    ? "bg-[#00529C] text-white shadow-md shadow-blue-100"
+                    : "text-slate-600 hover:bg-white border border-transparent hover:border-slate-200"
                     }`}
                 >
                   {i + 1}

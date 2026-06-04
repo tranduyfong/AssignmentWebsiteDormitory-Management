@@ -35,56 +35,51 @@ const Reports = () => {
     fetchDashboardData();
   }, []);
 
-  const handleExportPDF = async () => {
-    const element = reportRef.current;
-    if (!element) return;
+const handleExportPDF = async () => {
+  const element = reportRef.current;
+  if (!element) return;
 
-    const downloadBtn = document.getElementById('download-btn');
-    const loadingToast = toast.loading("Đang xuất báo cáo PDF...");
+  const downloadBtn = document.getElementById('download-btn');
+  const loadingToast = toast.loading("Đang xuất báo cáo PDF...");
 
-    try {
+  try {
+    // 1. Chụp ảnh với scale cao để nét
+    const canvas = await domToCanvas(element, {
+      scale: 2, // Giảm xuống 2 để file không quá nặng, vẫn đủ nét
+      backgroundColor: '#f8fafc',
+      width: element.offsetWidth,
+      height: element.scrollHeight,
+    });
 
-      // 1. Chụp ảnh với scale cao và chiều rộng cố định để đảm bảo chữ to
-      const canvas = await domToCanvas(element, {
-        scale: 3, // Tăng scale lên 3 để cực kỳ nét
-        backgroundColor: '#f8fafc',
-        width: element.offsetWidth, // Chụp đúng chiều rộng thực tế của web
-        height: element.scrollHeight,
-      });
+    const imgData = canvas.toDataURL('image/png');
 
-      if (downloadBtn) downloadBtn.style.opacity = '1';
+    // 2. Tính toán kích thước ảnh khi đưa vào PDF
+    const margin = 10;
+    const pageWidth = 297; // Khổ ngang A4 chuẩn (mm)
+    const imgWidth = pageWidth - (margin * 2);
+    const imgHeight = (canvas.height * imgWidth) / canvas.width; // Tính chiều cao ảnh tương ứng
 
-      const imgData = canvas.toDataURL('image/png');
+    // 3. TẠO PDF VỚI CHIỀU CAO LINH HOẠT
+    // Thay vì dùng 'a4', ta dùng mảng [pageWidth, imgHeight + margin * 2] 
+    // để trang PDF tự dài ra theo nội dung báo cáo
+    const pdf = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: [pageWidth, imgHeight + (margin * 2)] 
+    });
 
-      // 2. TẠO PDF KHỔ NGANG (Landscape) - Giúp Dashboard trông to và rộng hơn
-      const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'mm',
-        format: 'a4'
-      });
+    // 4. Thêm ảnh vào
+    pdf.addImage(imgData, 'PNG', margin, margin, imgWidth, imgHeight);
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+    const dateStr = new Date().toLocaleDateString('vi-VN').replaceAll('/', '-');
+    pdf.save(`Bao_cao_KTX_${dateStr}.pdf`);
 
-      // 3. Tính toán kích thước để ảnh lấp đầy chiều rộng trang (trừ đi lề 10mm)
-      const margin = 10;
-      const width = pageWidth - (margin * 2);
-      const height = (canvas.height * width) / canvas.width;
-
-      // 4. Nếu nội dung quá dài, nó sẽ tự động tràn xuống nhưng ảnh sẽ to rõ
-      pdf.addImage(imgData, 'PNG', margin, margin, width, height);
-
-      const dateStr = new Date().toLocaleDateString('vi-VN').replaceAll('/', '-');
-      pdf.save(`Bao_cao_KTX_${dateStr}.pdf`);
-
-      toast.success("Báo cáo đã sẵn sàng!", { id: loadingToast });
-    } catch (error) {
-      console.error("Lỗi:", error);
-      toast.error("Lỗi xử lý PDF", { id: loadingToast });
-      if (downloadBtn) downloadBtn.style.opacity = '1';
-    }
-  };
-
+    toast.success("Báo cáo đã sẵn sàng!", { id: loadingToast });
+  } catch (error) {
+    console.error("Lỗi:", error);
+    toast.error("Lỗi xử lý PDF", { id: loadingToast });
+  }
+};
   if (isLoading) {
     return (
       <div className="h-[70vh] flex flex-col items-center justify-center">

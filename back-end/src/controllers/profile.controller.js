@@ -34,10 +34,11 @@ exports.changePassword = async (req, res) => {
 };
 
 // 2. Cập nhật thông tin cá nhân (Dành cho Sinh viên)
-// 2. Cập nhật thông tin cá nhân (Dành cho Sinh viên)
 exports.updateMyProfile = async (req, res) => {
-    const maSV = req.user.id;
-    const { sdt, cccd, email, gioiTinh } = req.body;
+    const maSV = req.user.id; // Lấy từ middleware verifyToken
+
+    // 1. Lấy thêm các trường mới từ req.body
+    const { sdt, cccd, email, gioiTinh, ngaySinh, khoa, khoaHoc } = req.body;
 
     // Kiểm tra định dạng Email chuẩn
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -76,8 +77,8 @@ exports.updateMyProfile = async (req, res) => {
 
         // --- NẾU QUA HẾT CÁC BƯỚC KIỂM TRA THÌ MỚI LƯU ---
         await pool.execute(
-            'UPDATE SinhVien SET SDT = ?, CCCD = ?, Email = ?, GioiTinh = ? WHERE MaSV = ?',
-            [sdt, cccd, email, gioiTinh, maSV]
+            'UPDATE SinhVien SET SDT = ?, CCCD = ?, Email = ?, GioiTinh = ?, Khoa = ?, KhoaHoc = ? WHERE MaSV = ?',
+            [sdt, cccd, email, gioiTinh, khoa, khoaHoc, maSV]
         );
         res.status(200).json({ message: 'Cập nhật thông tin cá nhân thành công.' });
     } catch (error) {

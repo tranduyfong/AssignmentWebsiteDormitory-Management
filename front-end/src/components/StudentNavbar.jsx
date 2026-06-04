@@ -38,11 +38,11 @@ const StudentNavbar = ({ isOpen, setIsOpen, user }) => {
                         <p className="text-sm font-black text-slate-900 leading-none group-hover:text-[#00529C] transition-colors">
                             {fullName}
                         </p>
-                        <p className="text-[10px] font-bold text-blue-500 uppercase mt-1">
+                        <p className="text-[12px] font-bold text-[#00529C] uppercase mt-1">
                             MSV: {studentId}
                         </p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold shadow-inner border border-blue-200 group-hover:scale-105 transition-transform">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#00529C] flex items-center justify-center font-bold shadow-inner border border-blue-200 group-hover:scale-105 transition-transform">
                         {getInitials()}
                     </div>
                 </Link>

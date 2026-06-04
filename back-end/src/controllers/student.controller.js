@@ -43,7 +43,14 @@ exports.getRoomList = async (req, res) => {
         res.status(500).json({ message: 'Lỗi khi lấy danh sách phòng.' });
     }
 };
-
+exports.getZones = async (req, res) => {
+    try {
+        const [zones] = await pool.execute('SELECT MaKhu, TenKhu FROM Khu');
+        res.status(200).json(zones);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi khi tải danh sách Khu.' });
+    }
+};
 // 1. Lấy danh sách hợp đồng của sinh viên
 exports.getMyContracts = async (req, res) => {
     try {
@@ -54,7 +61,7 @@ exports.getMyContracts = async (req, res) => {
             SELECT h.*, p.TenPhong 
             FROM HopDong h
             JOIN Phong p ON h.MaPhong = p.MaPhong
-            WHERE h.MaSV = ? AND h.TrangThai = 1
+            WHERE h.MaSV = ? 
         `;
         const [contracts] = await pool.execute(query, [maSV]);
         res.status(200).json(contracts);
@@ -222,7 +229,7 @@ exports.vnpayReturn = async (req, res) => {
             if (invoiceIds.length > 0) {
                 // Cập nhật CSDL: Chuyển hóa đơn sang Đã thanh toán (1)
                 await pool.query(
-                    'UPDATE HoaDon SET TrangThaiThanhToan = 1 WHERE MaHoaDon IN (?)',
+                    'UPDATE HoaDon SET TrangThaiThanhToan = 1, PhuongThucThanhToan = "VNPay" WHERE MaHoaDon IN (?)',
                     [invoiceIds]
                 );
             }
