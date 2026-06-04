@@ -34,21 +34,55 @@ exports.changePassword = async (req, res) => {
 };
 
 // 2. Cập nhật thông tin cá nhân (Dành cho Sinh viên)
+// 2. Cập nhật thông tin cá nhân (Dành cho Sinh viên)
 exports.updateMyProfile = async (req, res) => {
     const maSV = req.user.id;
-    // Bổ sung gioiTinh vào destructuring
     const { sdt, cccd, email, gioiTinh } = req.body;
 
+    // Kiểm tra định dạng Email chuẩn
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ field: 'email', message: 'Định dạng Email không hợp lệ!' });
+    }
+
     try {
+        // --- 1. KIỂM TRA TRÙNG EMAIL ---
+        // Tìm xem có sinh viên nào khác (MaSV != maSV hiện tại) đang dùng Email này không
+        const [existingEmails] = await pool.execute(
+            'SELECT MaSV FROM SinhVien WHERE Email = ? AND MaSV != ?',
+            [email, maSV]
+        );
+        if (existingEmails.length > 0) {
+            return res.status(400).json({ field: 'email', message: 'Email này đã được tài khoản khác sử dụng!' });
+        }
+
+        // --- 2. KIỂM TRA TRÙNG SĐT (Nếu cần) ---
+        const [existingPhones] = await pool.execute(
+            'SELECT MaSV FROM SinhVien WHERE SDT = ? AND MaSV != ?',
+            [sdt, maSV]
+        );
+        if (existingPhones.length > 0) {
+            return res.status(400).json({ field: 'sdt', message: 'Số điện thoại này đã được đăng ký!' });
+        }
+
+        // --- 3. KIỂM TRA TRÙNG CCCD (Nếu cần) ---
+        const [existingCCCDs] = await pool.execute(
+            'SELECT MaSV FROM SinhVien WHERE CCCD = ? AND MaSV != ?',
+            [cccd, maSV]
+        );
+        if (existingCCCDs.length > 0) {
+            return res.status(400).json({ field: 'cccd', message: 'Số CCCD này đã tồn tại trong hệ thống!' });
+        }
+
+        // --- NẾU QUA HẾT CÁC BƯỚC KIỂM TRA THÌ MỚI LƯU ---
         await pool.execute(
-            // Bổ sung cập nhật cột GioiTinh
             'UPDATE SinhVien SET SDT = ?, CCCD = ?, Email = ?, GioiTinh = ? WHERE MaSV = ?',
             [sdt, cccd, email, gioiTinh, maSV]
         );
         res.status(200).json({ message: 'Cập nhật thông tin cá nhân thành công.' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi cập nhật thông tin.' });
+        res.status(500).json({ message: 'Lỗi server khi cập nhật thông tin.' });
     }
 };
 

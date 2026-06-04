@@ -98,39 +98,70 @@ exports.deleteBuilding = async (req, res) => {
 
 // --- QUẢN LÝ PHÒNG ---
 exports.createRoom = async (req, res) => {
-    // Bổ sung trangThai vào destructuring
-    const { maToaNha, tenPhong, loaiPhong, sucChua, gioiTinh, trangThai } = req.body;
-    try {
-        const query = `
-            INSERT INTO Phong (MaToaNha, TenPhong, LoaiPhong, GioiTinh, SucChua, TrangThai, SoSinhVienHienTai) 
-            VALUES (?, ?, ?, ?, ?, ?, 0)
-        `;
-        // Nếu frontend không gửi trangThai, mặc định là 'Trống'
-        const status = trangThai || 'Trống';
+    // Sửa lại thành chữ thường cho khớp với FE
+    const { maToaNha, tenPhong, loaiPhong, sucChua, gioiTinh } = req.body;
 
-        await pool.execute(query, [maToaNha, tenPhong, loaiPhong, gioiTinh, sucChua, status]);
+    // Kiểm tra an toàn trước khi trim
+    if (!tenPhong) {
+        return res.status(400).json({ message: 'Tên phòng không được để trống!' });
+    }
+
+    const tenPhongClean = tenPhong.trim();
+
+    try {
+        const [existingRoom] = await pool.execute(
+            'SELECT MaPhong FROM Phong WHERE TenPhong = ? AND MaToaNha = ?',
+            [tenPhongClean, maToaNha]
+        );
+
+        if (existingRoom.length > 0) {
+            return res.status(400).json({ message: `Phòng ${tenPhongClean} đã tồn tại trong tòa nhà này!` });
+        }
+
+        await pool.execute(
+            'INSERT INTO Phong (MaToaNha, TenPhong, LoaiPhong, SucChua, GioiTinh, SoSinhVienHienTai, TrangThai) VALUES (?, ?, ?, ?, ?, 0, "Trống")',
+            [maToaNha, tenPhongClean, loaiPhong, sucChua, gioiTinh]
+        );
+
         res.status(201).json({ message: 'Thêm phòng mới thành công!' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi thêm phòng.' });
+        res.status(500).json({ message: 'Lỗi server khi thêm phòng.' });
     }
 };
 
 
 exports.updateRoom = async (req, res) => {
     const { id } = req.params;
-    const { maToaNha,tenPhong, loaiPhong, sucChua, gioiTinh, trangThai } = req.body;
+    // Sửa lại thành chữ thường cho khớp với FE
+    const { maToaNha, tenPhong, loaiPhong, sucChua, gioiTinh } = req.body;
+
+    // Kiểm tra an toàn trước khi trim
+    if (!tenPhong) {
+        return res.status(400).json({ message: 'Tên phòng không được để trống!' });
+    }
+
+    const tenPhongClean = tenPhong.trim();
+
     try {
-        const query = `
-            UPDATE Phong 
-            SET maToaNha = ?, TenPhong = ?, LoaiPhong = ?, GioiTinh = ?, SucChua = ?, TrangThai = ?
-            WHERE MaPhong = ?
-        `;
-        await pool.execute(query, [maToaNha,tenPhong, loaiPhong, gioiTinh, sucChua, trangThai, id]);
-        res.status(200).json({ message: 'Cập nhật phòng thành công!' });
+        const [existingRoom] = await pool.execute(
+            'SELECT MaPhong FROM Phong WHERE TenPhong = ? AND MaToaNha = ? AND MaPhong != ?',
+            [tenPhongClean, maToaNha, id]
+        );
+
+        if (existingRoom.length > 0) {
+            return res.status(400).json({ message: `Phòng ${tenPhongClean} đã tồn tại trong tòa nhà này!` });
+        }
+
+        await pool.execute(
+            'UPDATE Phong SET MaToaNha = ?, TenPhong = ?, LoaiPhong = ?, SucChua = ?, GioiTinh = ? WHERE MaPhong = ?',
+            [maToaNha, tenPhongClean, loaiPhong, sucChua, gioiTinh, id]
+        );
+
+        res.status(200).json({ message: 'Cập nhật thông tin phòng thành công!' });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi khi cập nhật phòng.' });
+        res.status(500).json({ message: 'Lỗi server khi cập nhật phòng.' });
     }
 };
 

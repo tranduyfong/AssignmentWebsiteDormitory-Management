@@ -9,19 +9,25 @@ import toast from 'react-hot-toast';
 const Profile = () => {
     const [profile, setProfile] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isUpdating, setIsUpdating] = useState(false); // Trạng thái khi đang gọi API lưu
-    const [isEditing, setIsEditing] = useState(false); // Trạng thái bật/tắt form sửa
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
 
-    // State cho đổi mật khẩu
     const [showPass, setShowPass] = useState({ old: false, new: false });
     const [passData, setPassData] = useState({ oldPassword: '', newPassword: '', confirmPassword: '' });
 
-    // State cho cập nhật thông tin (Email, SĐT, CCCD, GioiTinh)
+    // State lưu trữ dữ liệu form
     const [editFormData, setEditFormData] = useState({
         email: '',
         sdt: '',
         cccd: '',
-        gioiTinh: 1 // Thêm state này, mặc định là 1 (Nam)
+        gioiTinh: 1
+    });
+
+    // STATE LƯU LỖI CHO TOOLTIP
+    const [formErrors, setFormErrors] = useState({
+        email: '',
+        sdt: '',
+        cccd: ''
     });
 
     const fetchProfile = async () => {
@@ -29,12 +35,11 @@ const Profile = () => {
             setIsLoading(true);
             const data = await axiosClient.get('/student/profile');
             setProfile(data);
-            // Đồng bộ dữ liệu vào form sửa
             setEditFormData({
                 email: data.Email || '',
                 sdt: data.SDT || '',
                 cccd: data.CCCD || '',
-                gioiTinh: data.GioiTinh !== undefined ? data.GioiTinh : 1 // Lấy giới tính từ DB
+                gioiTinh: data.GioiTinh !== undefined ? data.GioiTinh : 1
             });
         } catch (error) {
             toast.error("Không thể tải thông tin cá nhân");
@@ -45,23 +50,76 @@ const Profile = () => {
 
     useEffect(() => { fetchProfile(); }, []);
 
-    // 1. Xử lý cập nhật thông tin cá nhân
+    // --- CÁC HÀM XỬ LÝ LỖI TRỰC TIẾP KHI GÕ (REAL-TIME VALIDATION) ---
+    const handleEmailChange = (val) => {
+        setEditFormData({ ...editFormData, email: val });
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (val.trim() !== '' && !emailRegex.test(val)) {
+            setFormErrors(prev => ({ ...prev, email: 'Định dạng Email không hợp lệ!' }));
+        } else {
+            setFormErrors(prev => ({ ...prev, email: '' }));
+        }
+    };
+
+    const handleSdtChange = (val) => {
+        const numericVal = val.replace(/\D/g, ''); // Chỉ cho phép nhập số
+        setEditFormData({ ...editFormData, sdt: numericVal });
+        if (numericVal.length > 0 && numericVal.length < 10) {
+            setFormErrors(prev => ({ ...prev, sdt: 'Số điện thoại phải có ít nhất 10 số!' }));
+        } else {
+            setFormErrors(prev => ({ ...prev, sdt: '' }));
+        }
+    };
+
+    const handleCccdChange = (val) => {
+        const numericVal = val.replace(/\D/g, ''); // Chỉ cho phép nhập số
+        setEditFormData({ ...editFormData, cccd: numericVal });
+        if (numericVal.length > 0 && numericVal.length !== 12) {
+            setFormErrors(prev => ({ ...prev, cccd: 'CCCD phải có đúng 12 số!' }));
+        } else {
+            setFormErrors(prev => ({ ...prev, cccd: '' }));
+        }
+    };
+
+    // --- HÀM LƯU THÔNG TIN ĐÃ FIX LỖI ---
     const handleUpdateProfile = async (e) => {
         e.preventDefault();
+
+        if (formErrors.email || formErrors.sdt || formErrors.cccd) {
+            return toast.error("Vui lòng sửa các lỗi đang hiển thị trước khi lưu!");
+        }
+
+        if (!editFormData.email || !editFormData.sdt || !editFormData.cccd) {
+            return toast.error("Vui lòng không được để trống Email, SĐT hoặc CCCD!");
+        }
+
         try {
             setIsUpdating(true);
             await axiosClient.put('/student/update-profile', editFormData);
+
             toast.success("Cập nhật thông tin thành công!");
             setIsEditing(false);
-            fetchProfile(); // Load lại để hiển thị dữ liệu mới nhất
+            fetchProfile();
         } catch (error) {
-            toast.error(error.response?.data?.message || "Lỗi khi cập nhật");
+            const errorData = error.response?.data;
+
+            // NẾU BACK-END BÁO LỖI TRÙNG LẶP DỮ LIỆU CỤ THỂ Ở 1 TRƯỜNG NÀO ĐÓ
+            if (errorData && errorData.field) {
+                // Tự động bật Tooltip đỏ vào đúng ô bị lỗi
+                setFormErrors(prev => ({
+                    ...prev,
+                    [errorData.field]: errorData.message
+                }));
+                toast.error("Thông tin bị trùng lặp, vui lòng kiểm tra lại!");
+            } else {
+                // Nếu là lỗi chung chung khác
+                toast.error(errorData?.message || "Lỗi khi cập nhật thông tin!");
+            }
         } finally {
             setIsUpdating(false);
         }
     };
 
-    // 2. Xử lý đổi mật khẩu
     const handleChangePassword = async (e) => {
         e.preventDefault();
         if (passData.newPassword !== passData.confirmPassword) {
@@ -86,7 +144,7 @@ const Profile = () => {
     if (isLoading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>;
 
     return (
-        <div className="max-w-5xl mx-auto space-y-6  pb-10 font-sans">
+        <div className="max-w-5xl mx-auto space-y-6 pb-10 font-sans">
             <div className="flex justify-between items-end">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight">Hồ sơ cá nhân</h1>
@@ -180,17 +238,16 @@ const Profile = () => {
 
                         <form onSubmit={handleUpdateProfile} className="space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6">
-                                {/* Các trường không thể sửa */}
-                                <InfoItem label="Họ và Tên" value={profile?.HoTen} icon={User} isReadOnly />
-                                <InfoItem label="Mã sinh viên" value={profile?.MaSV} icon={ShieldCheck} isReadOnly />
-                                <InfoItem label="Giới tính" value={profile?.GioiTinh === 1 ? 'Nam' : 'Nữ'} icon={Users} />
-                                <InfoItem label="Ngày sinh" value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} icon={Calendar} isReadOnly />
+                                {/* CÁC TRƯỜNG CỐ ĐỊNH */}
+                                <InfoItem label="Họ và Tên" value={profile?.HoTen} icon={User} />
+                                <InfoItem label="Mã sinh viên" value={profile?.MaSV} icon={ShieldCheck} />
+                                <InfoItem label="Ngày sinh" value={profile?.NgaySinh ? new Date(profile.NgaySinh).toLocaleDateString('vi-VN') : 'Chưa cập nhật'} icon={Calendar} />
 
-                                {/* Các trường CÓ THỂ SỬA */}
+                                {/* CÁC TRƯỜNG CHO PHÉP SỬA (ĐÃ TÍCH HỢP TOOLTIP VÀ VALIDATION) */}
                                 <EditableSelect
                                     label="Giới tính"
                                     value={profile?.GioiTinh === 1 ? 'Nam' : (profile?.GioiTinh === 0 ? 'Nữ' : 'Chưa cập nhật')}
-                                    icon={User}
+                                    icon={Users}
                                     isEditing={isEditing}
                                     inputValue={editFormData.gioiTinh}
                                     onChange={(val) => setEditFormData({ ...editFormData, gioiTinh: val })}
@@ -205,7 +262,8 @@ const Profile = () => {
                                     icon={Mail}
                                     isEditing={isEditing}
                                     inputValue={editFormData.email}
-                                    onChange={(val) => setEditFormData({ ...editFormData, email: val })}
+                                    onChange={handleEmailChange} // Dùng hàm kiểm tra ngay khi gõ
+                                    error={formErrors.email}     // Truyền state lỗi để bật Tooltip
                                 />
                                 <EditableItem
                                     label="Số điện thoại"
@@ -213,7 +271,8 @@ const Profile = () => {
                                     icon={Phone}
                                     isEditing={isEditing}
                                     inputValue={editFormData.sdt}
-                                    onChange={(val) => setEditFormData({ ...editFormData, sdt: val })}
+                                    onChange={handleSdtChange}
+                                    error={formErrors.sdt}
                                 />
                                 <EditableItem
                                     label="Số CCCD"
@@ -221,11 +280,12 @@ const Profile = () => {
                                     icon={ShieldCheck}
                                     isEditing={isEditing}
                                     inputValue={editFormData.cccd}
-                                    onChange={(val) => setEditFormData({ ...editFormData, cccd: val })}
+                                    onChange={handleCccdChange}
+                                    error={formErrors.cccd}
                                 />
                             </div>
 
-                            {/* Nút lưu khi ở chế độ Edit */}
+                            {/* NÚT LƯU KHI Ở CHẾ ĐỘ EDIT */}
                             {isEditing && (
                                 <div className="pt-4 animate-in slide-in-from-bottom-2 duration-300">
                                     <button
@@ -262,7 +322,8 @@ const Profile = () => {
     );
 };
 
-// Component cho các trường chỉ xem
+// --- CÁC COMPONENT GIAO DIỆN PHỤ BÊN DƯỚI ---
+
 const InfoItem = ({ label, value, icon: Icon }) => (
     <div className="space-y-1 ">
         <div className="flex items-center text-slate-400 gap-1.5">
@@ -273,26 +334,35 @@ const InfoItem = ({ label, value, icon: Icon }) => (
     </div>
 );
 
-// Component cho các trường có thể cập nhật
-const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChange }) => (
+// Component EditableItem CÓ CHỨA TOOLTIP BÁO LỖI
+const EditableItem = ({ label, value, icon: Icon, isEditing, inputValue, onChange, error }) => (
     <div className="space-y-1.5">
         <div className="flex items-center text-slate-400 gap-1.5">
             <Icon size={14} />
             <span className="text-[10px] font-bold uppercase tracking-wider">{label}</span>
         </div>
         {isEditing ? (
-            <input
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 transition-all "
-                value={inputValue}
-                onChange={(e) => onChange(e.target.value)}
-            />
+            <div className="relative">
+                <input
+                    className={`w-full px-3 py-2 bg-slate-50 border rounded-xl outline-none text-sm font-semibold text-slate-800 transition-all 
+                        ${error ? 'border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-50' : 'border-slate-200 focus:border-blue-500'}`}
+                    value={inputValue}
+                    onChange={(e) => onChange(e.target.value)}
+                />
+                {/* TOOLTIP HIỆN RA KHI CÓ LỖI */}
+                {error && (
+                    <div className="absolute z-10 bottom-full left-2 mb-2 px-3 py-1.5 bg-red-600 text-white text-[11px] font-bold rounded-lg shadow-lg animate-in fade-in zoom-in duration-200 whitespace-nowrap">
+                        <div className="absolute -bottom-1 left-4 w-2 h-2 bg-red-600 rotate-45"></div>
+                        {error}
+                    </div>
+                )}
+            </div>
         ) : (
             <p className="text-sm font-semibold text-slate-700 pl-5">{value || "---"}</p>
         )}
     </div>
 );
 
-// Component cho các trường có thể cập nhật dạng Dropdown (Select)
 const EditableSelect = ({ label, value, icon: Icon, isEditing, inputValue, onChange, options }) => (
     <div className="space-y-1.5">
         <div className="flex items-center text-slate-400 gap-1.5">
@@ -303,7 +373,7 @@ const EditableSelect = ({ label, value, icon: Icon, isEditing, inputValue, onCha
             <select
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-blue-500 text-sm font-semibold text-slate-800 transition-all cursor-pointer"
                 value={inputValue}
-                onChange={(e) => onChange(Number(e.target.value))} // Ép về số nguyên
+                onChange={(e) => onChange(Number(e.target.value))}
             >
                 {options.map((opt, idx) => (
                     <option key={idx} value={opt.value}>{opt.label}</option>

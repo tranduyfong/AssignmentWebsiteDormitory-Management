@@ -3,6 +3,13 @@ const { vnpay, returnUrl } = require('../configs/vnpay.config');
 
 exports.getRoomList = async (req, res) => {
     try {
+        const maSV = req.user.id; // Lấy mã sinh viên từ token
+
+        // 1. Lấy thông tin phòng hiện tại của sinh viên này
+        const [svInfo] = await pool.execute('SELECT MaPhong FROM SinhVien WHERE MaSV = ?', [maSV]);
+        const myRoomId = svInfo.length > 0 ? svInfo[0].MaPhong : null;
+
+        // 2. Query lấy danh sách phòng (giữ nguyên như cũ)
         const query = `
             SELECT 
                 p.*, 
@@ -18,7 +25,19 @@ exports.getRoomList = async (req, res) => {
             ORDER BY k.TenKhu ASC, t.TenToaNha ASC, p.TenPhong ASC
         `;
         const [rooms] = await pool.execute(query);
-        res.status(200).json(rooms);
+
+        // 3. Xử lý dữ liệu trước khi trả về Frontend
+        const processedRooms = rooms.map(room => {
+            const isMyRoom = room.MaPhong === myRoomId;
+            return {
+                ...room,
+                isMyRoom: isMyRoom, // Thêm cờ nhận diện phòng của mình
+                // Nếu là phòng của mình thì hiện danh sách, ngược lại trả về null để bảo mật
+                DanhSachSV: isMyRoom ? room.DanhSachSV : null
+            };
+        });
+
+        res.status(200).json(processedRooms);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi khi lấy danh sách phòng.' });

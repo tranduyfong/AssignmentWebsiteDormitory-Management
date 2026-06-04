@@ -114,7 +114,7 @@ exports.createStudent = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password || '123456aA@', salt);
 
         const [resTK] = await connection.execute(
-            'INSERT INTO TaiKhoan (TenDangNhap, MatKhau, VaiTro) VALUES (?, ?, 1)',
+            'INSERT INTO TaiKhoan (TenDangNhap, MatKhau, VaiTro, TrangThaiXacNhan) VALUES (?, ?, 1, 1)',
             [msv, hashedPassword]
         );
         const maTK = resTK.insertId;

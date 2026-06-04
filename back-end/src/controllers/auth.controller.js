@@ -24,6 +24,10 @@ exports.register = async (req, res) => {
         if (existingUsers.length > 0) {
             throw new Error('Tài khoản hoặc Mã sinh viên đã tồn tại trên hệ thống!');
         }
+        const [existingEmails] = await connection.execute('SELECT MaSV FROM SinhVien WHERE Email = ?', [email]);
+        if (existingEmails.length > 0) {
+            throw new Error('Email này đã được đăng ký cho một tài khoản khác!');
+        }
 
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
@@ -173,28 +177,18 @@ exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
 
     try {
-        // 1. Tìm tài khoản dựa trên Email (Join bảng SinhVien và TaiKhoan)
-        const [users] = await pool.execute(`
-            SELECT t.MaTK, s.HoTen 
-            FROM TaiKhoan t 
-            JOIN SinhVien s ON t.MaTK = s.MaTK 
-            WHERE s.Email = ?
-        `, [email]);
+        const [students] = await pool.execute('SELECT MaTK, HoTen FROM SinhVien WHERE Email = ?', [email]);
+        if (students.length === 0) return res.status(404).json({ message: 'Email không tồn tại trong hệ thống!' });
 
-        if (users.length === 0) {
-            return res.status(404).json({ message: 'Không tìm thấy tài khoản nào liên kết với Email này.' });
-        }
+        const maTK = students[0].MaTK;
 
-        const user = users[0];
+        // 1. Tạo OTP ngẫu nhiên 6 số chuẩn dạng Chuỗi (String)
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-        // 2. Tạo mã OTP 6 số ngẫu nhiên
-        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-        // 3. Lưu OTP và thời hạn (10 phút) vào DB
-        // Dùng DATE_ADD để cộng thêm 10 phút tính từ thời điểm hiện tại
+        // 2. BẮT BUỘC: Lưu mã OTP này vào Database với thời hạn 15 phút
         await pool.execute(
-            'UPDATE TaiKhoan SET MaKhoiPhuc = ?, HanMaKhoiPhuc = DATE_ADD(NOW(), INTERVAL 10 MINUTE) WHERE MaTK = ?',
-            [otpCode, user.MaTK]
+            'UPDATE TaiKhoan SET MaKhoiPhuc = ?, HanMaKhoiPhuc = DATE_ADD(NOW(), INTERVAL 15 MINUTE) WHERE MaTK = ?',
+            [otp, maTK]
         );
 
         // 4. Gửi Email
@@ -205,10 +199,10 @@ exports.forgotPassword = async (req, res) => {
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 10px;">
                     <h2 style="color: #00529C; text-align: center;">Khôi phục mật khẩu</h2>
-                    <p>Xin chào <strong>${user.HoTen}</strong>,</p>
+                    <p>Xin chào <strong>${students.HoTen}</strong>,</p>
                     <p>Bạn vừa yêu cầu đặt lại mật khẩu cho tài khoản Ký túc xá. Dưới đây là mã xác nhận 6 số của bạn:</p>
                     <div style="text-align: center; margin: 30px 0;">
-                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #00529C; background-color: #f1f5f9; padding: 15px 30px; border-radius: 10px; border: 2px dashed #cbd5e1;">${otpCode}</span>
+                        <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; color: #00529C; background-color: #f1f5f9; padding: 15px 30px; border-radius: 10px; border: 2px dashed #cbd5e1;">${otp}</span>
                     </div>
                     <p style="color: #ef4444; text-align: center; font-size: 14px; font-weight: bold;">Mã này sẽ hết hạn sau 10 phút.</p>
                     <p style="font-size: 12px; color: #64748b; text-align: center;">Nếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này.</p>
@@ -230,35 +224,60 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
     const { email, otp, newPassword } = req.body;
 
+    // CHẶN NGAY LẬP TỨC nếu Front-end gửi thiếu 1 trong 3 trường này hoặc gửi chuỗi rỗng
+    if (!email || !otp || !newPassword || otp.trim() === '') {
+        return res.status(400).json({ message: 'Vui lòng nhập đầy đủ Email, Mã xác nhận và Mật khẩu mới!' });
+    }
+
     try {
-        // 1. Tìm tài khoản bằng Email và OTP, đồng thời kiểm tra thời hạn
+        // Kiểm tra khớp 100% Email + OTP và thời gian còn hiệu lực
         const [users] = await pool.execute(`
             SELECT t.MaTK 
             FROM TaiKhoan t 
             JOIN SinhVien s ON t.MaTK = s.MaTK 
             WHERE s.Email = ? AND t.MaKhoiPhuc = ? AND t.HanMaKhoiPhuc > NOW()
-        `, [email, otp]);
+        `, [email, otp.trim()]); // Dùng .trim() để xóa khoảng trắng thừa nếu người dùng lỡ copy dính dấu cách
 
         if (users.length === 0) {
             return res.status(400).json({ message: 'Mã xác nhận không chính xác hoặc đã hết hạn.' });
         }
 
         const user = users[0];
-
-        // 2. Băm mật khẩu mới
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        // 3. Cập nhật mật khẩu và xóa OTP để không dùng lại được nữa
+        // Đổi mật khẩu thành công thì PHẢI set OTP về NULL để không bị dùng lại
         await pool.execute(
             'UPDATE TaiKhoan SET MatKhau = ?, MaKhoiPhuc = NULL, HanMaKhoiPhuc = NULL WHERE MaTK = ?',
             [hashedPassword, user.MaTK]
         );
 
-        res.status(200).json({ message: 'Đổi mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.' });
-
+        res.status(200).json({ message: 'Đổi mật khẩu thành công! Bạn có thể đăng nhập ngay bây giờ.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Lỗi server khi đặt lại mật khẩu.' });
+    }
+};
+
+// 4.5. KIỂM TRA TRƯỚC MÃ OTP (BƯỚC 2)
+exports.verifyOTP = async (req, res) => {
+    const { email, otp } = req.body;
+
+    try {
+        const [users] = await pool.execute(`
+            SELECT t.MaTK 
+            FROM TaiKhoan t 
+            JOIN SinhVien s ON t.MaTK = s.MaTK 
+            WHERE s.Email = ? AND t.MaKhoiPhuc = ? AND t.HanMaKhoiPhuc > NOW()
+        `, [email, otp.trim()]);
+
+        if (users.length === 0) {
+            return res.status(400).json({ message: 'Mã xác nhận không chính xác hoặc đã hết hạn.' });
+        }
+
+        res.status(200).json({ message: 'Mã xác nhận hợp lệ.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Lỗi server khi xác thực mã.' });
     }
 };

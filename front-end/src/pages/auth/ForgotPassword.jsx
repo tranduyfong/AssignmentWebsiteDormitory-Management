@@ -34,35 +34,49 @@ const ForgotPassword = () => {
     };
 
     // BƯỚC 2: Xác nhận bấm nút chuyển sang bước 3
-    const handleVerifyOTP = (e) => {
+    // BƯỚC 2: Gọi API xác thực OTP trước khi cho chuyển sang bước 3
+    const handleVerifyOTP = async (e) => {
         e.preventDefault();
         if (otp.length !== 6) return toast.error('Mã xác nhận phải gồm 6 chữ số');
-        setStep(3); // Tạm thời chuyển sang bước 3, việc check OTP đúng/sai sẽ gộp chung vào lúc Submit mật khẩu
+
+        try {
+            setIsLoading(true);
+            // GỌI BACK-END ĐỂ KIỂM TRA MÃ OTP
+            await axiosClient.post('/auth/verify-otp', { email, otp });
+
+            // CHỈ KHI NÀO BACK-END TRẢ VỀ THÀNH CÔNG (HTTP 200) THÌ MỚI SANG BƯỚC 3
+            setStep(3);
+        } catch (error) {
+            // NẾU NHẬP BỪA, BACK-END BÁO LỖI VÀ CHẶN ĐỨNG NGAY TẠI ĐÂY
+            toast.error(error.response?.data?.message || 'Mã xác nhận không chính xác!');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     // BƯỚC 3: Đổi mật khẩu mới
     const handleResetPassword = async (e) => {
         e.preventDefault();
+
+        // Kiểm tra sơ bộ ở Front-end trước khi gọi API
+        if (!otp) return toast.error('Vui lòng nhập mã xác nhận!');
         if (passwords.newPassword !== passwords.confirmPassword) {
-            return toast.error('Mật khẩu xác nhận không khớp!');
+            return toast.error('Mã xác nhận không chính xác hoặc đã hết hạn.');
         }
 
         try {
             setIsLoading(true);
+            // Bắt buộc phải có đủ { email, otp, newPassword } gửi đi
             await axiosClient.post('/auth/reset-password', {
-                email,
-                otp,
+                email: email,
+                otp: otp,
                 newPassword: passwords.newPassword
             });
 
-            toast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại.', { duration: 5000 });
+            toast.success('Đổi mật khẩu thành công!');
             navigate('/login');
         } catch (error) {
-            // Nếu lỗi ở đây thì có thể là do OTP sai hoặc hết hạn
-            toast.error(error.response?.data?.message || 'Đổi mật khẩu thất bại');
-            if (error.response?.status === 400) {
-                setStep(2); // Đẩy lùi về bước 2 bắt nhập lại mã
-            }
+            toast.error(error.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại!');
         } finally {
             setIsLoading(false);
         }
