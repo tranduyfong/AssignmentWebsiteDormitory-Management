@@ -2,7 +2,34 @@ import React, { useState, useEffect } from 'react';
 import { Send, Info, CheckCircle2, Loader2,ChevronDown  } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 
+
+const getDynamicSemesters = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0 - 11 (Tháng 1 là 0)
+
+    let startYear, endYear;
+
+    // Nếu là từ tháng 8 trở đi, thường là đang đăng ký cho năm học mới
+    // Nếu là đầu năm (trước tháng 8), vẫn thuộc chu kỳ năm học cũ
+    if (currentMonth >= 7) { // Từ tháng 8 đến tháng 12
+        startYear = currentYear;
+        endYear = currentYear + 1;
+    } else { // Từ tháng 1 đến tháng 7
+        startYear = currentYear - 1;
+        endYear = currentYear;
+    }
+
+    const schoolYear = `${startYear}-${endYear}`;
+    return [
+        `Kỳ I (${schoolYear})`,
+        `Kỳ II (${schoolYear})`,
+        `Kỳ Hè (${schoolYear})`
+    ];
+};
+
 const RoomRegistration = () => {
+     const semesterOptions = getDynamicSemesters();
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
 
@@ -11,12 +38,15 @@ const RoomRegistration = () => {
      const [zones, setZones] = useState([]); 
     const [isLoadingZones, setIsLoadingZones] = useState(true);
 
-    const [formData, setFormData] = useState({
-        hocKy: 'Kỳ I (2025-2026)',
+   const [formData, setFormData] = useState({
+        hocKy: semesterOptions[0], // Lấy kỳ đầu tiên làm mặc định
         nguyenVongKhu: '',
         nguyenVongLoaiPhong: 'Phòng 4 người',
         ghiChu: ''
     });
+
+    
+    
 
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -109,14 +139,16 @@ const RoomRegistration = () => {
                         <div>
                             <label className="block text-[11px] font-bold text-slate-500 uppercase ml-1 mb-1.5">Học kỳ đăng ký</label>
                             <select
-                                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all font-medium text-slate-700"
-                                value={formData.hocKy}
-                                onChange={(e) => setFormData({ ...formData, hocKy: e.target.value })}
-                            >
-                                <option value="Kỳ I (2025-2026)">Kỳ I (2025-2026)</option>
-                                <option value="Kỳ II (2025-2026)">Kỳ II (2025-2026)</option>
-                                <option value="Kỳ Hè (2025-2026)">Kỳ Hè (2025-2026)</option>
-                            </select>
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-all font-medium text-slate-700"
+                value={formData.hocKy}
+                onChange={(e) => setFormData({ ...formData, hocKy: e.target.value })}
+            >
+                {semesterOptions.map((opt) => (
+                    <option key={opt} value={opt}>
+                        {opt}
+                    </option>
+                ))}
+            </select>
                         </div>
                     </div>
                 </div>

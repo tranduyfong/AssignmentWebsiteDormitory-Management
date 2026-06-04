@@ -129,15 +129,7 @@ const MyContracts = () => {
                                     <p className="text-slate-400 text-[11px] font-medium">
                                         {isActive ? '* Hợp đồng đang có giá trị pháp lý từ ngày ký kết.' : '* Hợp đồng này đã kết thúc giá trị lưu trú.'}
                                     </p>
-                                    <button
-                                        className={`w-full sm:w-auto flex items-center justify-center px-8 py-2.5 rounded-2xl font-bold text-xs transition-all active:scale-95 shadow-lg
-                                            ${isActive 
-                                                ? 'bg-slate-900 text-white hover:bg-[#00529C] shadow-slate-200' 
-                                                : 'bg-slate-200 text-slate-500 cursor-not-allowed shadow-none'}`}
-                                        disabled={!isActive}
-                                    >
-                                        <Download size={16} className="mr-2" /> { 'Tải bản mềm PDF'}
-                                    </button>
+
                                 </div>
                             </div>
                         </div>

@@ -128,7 +128,7 @@ const Profile = () => {
                             {profile?.HoTen?.split(' ').pop().charAt(0)}
                         </div>
                         <h2 className="text-lg font-bold text-slate-800 leading-tight">{profile?.HoTen}</h2>
-                        <p className="text-[#00529C] font-bold text-[11px] uppercase mt-1 tracking-widest">Mã SV: {profile?.MaSV}</p>
+                        <p className="text-[#00529C] font-bold text-[12px] uppercase mt-1 tracking-widest">Mã SV: {profile?.MaSV}</p>
                     </div>
 
                     <div className="bg-white p-6 rounded-[24px] border border-slate-200 shadow-sm">

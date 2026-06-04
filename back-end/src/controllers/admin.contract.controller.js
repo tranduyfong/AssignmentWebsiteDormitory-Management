@@ -91,3 +91,29 @@ exports.terminateContract = async (req, res) => {
         connection.release();
     }
 };
+
+
+exports.getActiveContractBySV = async (req, res) => {
+    const { msv } = req.params;
+    try {
+        const query = `
+            SELECT h.*, p.TenPhong,
+            (SELECT IFNULL(SUM(SoTien), 0) 
+             FROM HoaDon 
+             WHERE MaSV = h.MaSV 
+               AND LoaiHoaDon = 'Tiền phòng' 
+               AND NgayLap >= h.NgayBatDau) as DaLapHoaDon
+            FROM HopDong h
+            JOIN Phong p ON h.MaPhong = p.MaPhong
+            WHERE h.MaSV = ? AND h.TrangThai = 1
+            LIMIT 1
+        `;
+        const [contracts] = await pool.execute(query, [msv]);
+        if (contracts.length === 0) {
+            return res.status(404).json({ message: 'Sinh viên này chưa có hợp đồng hiệu lực.' });
+        }
+        res.status(200).json(contracts[0]);
+    } catch (error) {
+        res.status(500).json({ message: 'Lỗi server.' });
+    }
+};

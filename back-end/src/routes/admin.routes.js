@@ -73,6 +73,7 @@ router.get('/incidents', operationController.getAllIncidents);
 router.get('/contracts', contractController.getAllContracts);
 router.put('/contracts/:id/extend', contractController.extendContract);
 router.put('/contracts/:id/terminate', contractController.terminateContract);
+router.get('/contracts/active/:msv', contractController.getActiveContractBySV);
 
 // 6. Thống kê - Báo cáo (Dashboard)
 router.get('/dashboard/summary', dashboardController.getDashboardSummary);

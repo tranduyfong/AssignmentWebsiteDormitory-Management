@@ -38,7 +38,7 @@ exports.recordUtilities = async (req, res) => {
 
     } catch (error) {
         console.error("Lỗi recordUtilities:", error);
-        res.status(500).json({ message: 'Lỗi server khi ghi nhận điện nước.' });
+        res.status(500).json({ message: 'Lỗi ghi nhận điện nước.' });
     }
 };
 exports.updateUtility = async (req, res) => {
@@ -108,7 +108,7 @@ exports.updateUtility = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi server khi cập nhật dữ liệu.' });
+        res.status(500).json({ message: 'Lỗi cập nhật dữ liệu.' });
     }
 };
 exports.deleteUtility = async (req, res) => {
@@ -139,7 +139,7 @@ exports.deleteUtility = async (req, res) => {
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Lỗi server khi thực hiện xóa dữ liệu.' });
+        res.status(500).json({ message: 'Lỗi thực hiện xóa dữ liệu.' });
     }
 };
 
@@ -246,13 +246,11 @@ exports.createInvoice = async (req, res) => {
 
             await connection.execute('UPDATE DienNuoc SET TrangThaiChot = 1 WHERE MaDienNuoc = ?', [maDienNuoc]);
         } 
-        // --- LUỒNG 3: TIỀN PHÒNG & PHÍ KHÁC (Tạo 1 hóa đơn cho 1 người) ---
         else {
             const querySingle = `
                 INSERT INTO HoaDon (MaPhong, MaSV, MaDienNuoc, LoaiHoaDon, KyHoaDon, SoTien, TrangThaiThanhToan, NgayLap)
                 VALUES (?, ?, NULL, ?, ?, ?, 0, ?)
             `;
-            // Luôn ghi nhãn loaiHoaDon (ví dụ: "Tiền phòng") gửi từ Frontend
             await connection.execute(querySingle, [maPhong, maSV, loaiHoaDon, kyHoaDon, finalAmount, ngayLap]);
         }
 
@@ -280,7 +278,7 @@ exports.deleteInvoice = async (req, res) => {
         await pool.execute('DELETE FROM HoaDon WHERE MaHoaDon = ?', [id]);
         res.status(200).json({ message: 'Đã xóa hóa đơn thành công.' });
     } catch (error) {
-        res.status(500).json({ message: 'Lỗi server khi xóa hóa đơn.' });
+        res.status(500).json({ message: 'Lỗi xóa hóa đơn.' });
     }
 };
 

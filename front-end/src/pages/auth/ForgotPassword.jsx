@@ -75,7 +75,7 @@ const ForgotPassword = () => {
                     Khôi phục mật khẩu
                 </h2>
                 <p className="mt-2 text-center text-sm font-bold text-slate-500 uppercase tracking-widest">
-                    Hệ thống Ký túc xá HUMG
+                    Hệ thống Ký túc xá sinh viên
                 </p>
             </div>
 

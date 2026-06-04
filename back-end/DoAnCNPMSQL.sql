@@ -188,3 +188,53 @@ ALTER TABLE TaiKhoan ADD COLUMN HanMaKhoiPhuc DATETIME DEFAULT NULL;
 ALTER TABLE SinhVien 
 ADD COLUMN Khoa VARCHAR(100) AFTER NgaySinh,
 ADD COLUMN KhoaHoc VARCHAR(20) AFTER Khoa; 
+
+
+USE KTX_HUMG;
+INSERT INTO NoiQuy (TieuDe, DanhMuc, NoiDung, NgayCapNhat) VALUES
+(
+'Nội quy Ký túc xá sinh viên',
+'Quy định chung',
+'
+I. QUY ĐỊNH CHUNG
+1. Sinh viên ở KTX phải chấp hành nghiêm chỉnh các quy định của Nhà nước, Nhà trường và Ban quản lý KTX.
+2. Có trách nhiệm giữ gìn an ninh trật tự, đoàn kết, giúp đỡ lẫn nhau trong sinh hoạt.
+3. Không được tự ý chuyển phòng, đổi chỗ ở khi chưa được sự cho phép của Ban quản lý.
+4. Phải xuất trình thẻ sinh viên hoặc giấy tờ liên quan khi được yêu cầu kiểm tra.
+5. Nghiêm cấm các hành vi gây mất trật tự, ảnh hưởng đến môi trường sống chung.
+
+II. QUY ĐỊNH VỀ GIỜ GIẤC
+1. Giờ mở cửa: 05h00 sáng.
+2. Giờ đóng cửa: 23h00 tối.
+3. Sinh viên về muộn phải báo trước và ghi sổ trực.
+4. Không được ở ngoài qua đêm nếu không đăng ký với Ban quản lý.
+
+III. VỆ SINH MÔI TRƯỜNG
+1. Giữ gìn vệ sinh phòng ở, hành lang, khu sinh hoạt chung.
+2. Đổ rác đúng nơi quy định, đúng giờ quy định.
+3. Không xả rác, khạc nhổ bừa bãi trong khuôn viên KTX.
+4. Có trách nhiệm bảo vệ tài sản chung.
+
+IV. AN NINH – TRẬT TỰ
+1. Không chứa chấp người lạ qua đêm.
+2. Không tổ chức tụ tập đông người gây mất trật tự.
+3. Không sử dụng rượu bia, chất kích thích trong KTX.
+4. Nghiêm cấm đánh bạc, sử dụng chất cấm, gây gổ đánh nhau.
+
+V. SỬ DỤNG ĐIỆN – NƯỚC
+1. Sử dụng điện nước tiết kiệm.
+2. Tắt các thiết bị điện khi ra khỏi phòng.
+3. Không sử dụng thiết bị điện công suất lớn (bếp điện, ấm siêu tốc...) khi chưa được phép.
+4. Báo ngay cho quản lý khi phát hiện sự cố điện nước.
+
+VI. XỬ LÝ VI PHẠM
+1. Sinh viên vi phạm sẽ bị nhắc nhở, cảnh cáo hoặc xử lý theo quy định.
+2. Trường hợp nghiêm trọng có thể bị đình chỉ ở KTX hoặc xử lý theo pháp luật.
+3. Mọi thiệt hại tài sản phải bồi thường theo quy định.
+
+VII. ĐIỀU KHOẢN THI HÀNH
+1. Nội quy có hiệu lực kể từ ngày ban hành.
+2. Mọi sinh viên ở KTX có trách nhiệm thực hiện nghiêm túc.
+',
+'2026-01-01'
+);

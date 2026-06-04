@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Plus, Trash2, X, Save, User, Loader2, CreditCard, 
-  Search, Calendar, Filter, ChevronLeft, ChevronRight ,Info,ChevronDown
+  Search, Calendar, Filter, ChevronLeft, ChevronRight ,Info,ChevronDown, ArrowRight, FileSignature
 } from 'lucide-react';
 import axiosClient from '../../utils/axios.interceptor';
 import toast from 'react-hot-toast';
@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 const generateSemesters = () => {
     const years = [];
     const currentYear = new Date().getFullYear();
-    for (let i = currentYear - 1; i < currentYear; i++) {
+    for (let i = currentYear - 1; i <= currentYear; i++) {
         const schoolYear = `${i}-${i + 1}`;
         years.push(`Học kỳ I (${schoolYear})`);
         years.push(`Học kỳ II (${schoolYear})`);
@@ -27,6 +27,9 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
     const [studentSearch, setStudentSearch] = useState(''); // State tìm kiếm riêng trong Modal
     const [selectedStudent, setSelectedStudent] = useState(null)
 
+
+        const [activeContract, setActiveContract] = useState(null);
+    const [isFetchingContract, setIsFetchingContract] = useState(false);
     // --- 1. State cho Phân trang ---
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 10; 
@@ -66,11 +69,45 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
         );
     }, [studentList, studentSearch]);
 
-    const handleSelect = (student) => {
+    const handleSelect = async (student) => {
         setSelectedStudent(student);
-        setFormData({ ...formData, maSV: student.MaSV, maPhong: student.MaPhong });
-        setStudentSearch(''); // Reset search sau khi chọn
+        setIsFetchingContract(true);
+        try {
+            const contract = await axiosClient.get(`/admin/contracts/active/${student.MaSV}`);
+            setActiveContract(contract);
+            setFormData({ ...formData, maSV: student.MaSV, maPhong: student.MaPhong });
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Sinh viên không có hợp đồng hiệu lực");
+            setSelectedStudent(null); // Không cho chọn nếu không có hợp đồng
+        } finally {
+            setIsFetchingContract(false);
+            setStudentSearch('');
+        }
     };
+const previewData = useMemo(() => {
+    if (!activeContract) return null;
+    const start = new Date(activeContract.NgayBatDau);
+    const end = new Date(activeContract.NgayKetThuc);
+    
+    // Tính tổng số tháng
+    let diffMonths = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    if (end.getDate() > start.getDate()) diffMonths++;
+    if (diffMonths <= 0) diffMonths = 1;
+
+    const unitPrice = 500000; // Đơn giá hàng tháng
+    const totalContractValue = diffMonths * unitPrice;
+    const alreadyBilled = Number(activeContract.DaLapHoaDon || 0); // Lấy từ Backend trả về
+    const finalAmount = totalContractValue - alreadyBilled;
+
+    return {
+        months: diffMonths,
+        totalContractValue: totalContractValue,
+        alreadyBilled: alreadyBilled,
+        amountToBill: finalAmount, // Số tiền thực tế sẽ thu thêm
+        startDate: start.toLocaleDateString('vi-VN'),
+        endDate: end.toLocaleDateString('vi-VN')
+    };
+}, [activeContract]);
 
     const filteredData = useMemo(() => {
         return data.filter(item => {
@@ -123,10 +160,10 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
         if (window.confirm("Bạn có chắc chắn muốn xóa hóa đơn tiền phòng này?")) {
             try {
                 await axiosClient.delete(`/admin/invoices/${id}`);
-                toast.success("Đã xóa hóa đơn");
+                toast.success("Đã xóa hóa đơn tiền phòng");
                 refresh();
             } catch (error) {
-                toast.error(error.response?.data?.message || "Lỗi khi xóa");
+                toast.error(error.response?.data?.message || "Lỗi khi xóa hóa đơn tiền phòng");
             }
         }
     };
@@ -268,84 +305,106 @@ const StudentFeesTab = ({ data, isLoading, refresh }) => {
                         {/* Header Modal */}
                         <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                             <div>
-                                <h3 className="font-bold text-slate-800 text-lg">Lập phí phòng</h3>
+                                <h3 className="font-bold text-slate-800 text-lg">Lập hóa đơn tiền phòng</h3>
                             
                             </div>
                             <button 
-                                onClick={() => {setIsModalOpen(false); setSelectedStudent(null);}} 
-                                className="p-2 hover:bg-white rounded-full transition-all border border-transparent hover:border-slate-200"
+                                onClick={() => {setIsModalOpen(false); setSelectedStudent(null); setActiveContract(null);}} 
+                                className="p-2 hover:bg-white rounded-full transition-all"
                             >
                                 <X size={20} className="text-slate-400" />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto">
+                        <form onSubmit={handleSave} className="p-8 space-y-6 overflow-y-auto custom-scrollbar">
                             
-                            {/* PHẦN CHỌN SINH VIÊN THÔNG MINH */}
-                            <div className="space-y-3">
-                                <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider ml-1">
-                                    Chọn sinh viên
-                                </label>
-                                
+                        <div className="space-y-3">
+                                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest ml-1">Chọn sinh viên</label>
                                 {selectedStudent ? (
-                                    /* Hiển thị khi ĐÃ CHỌN */
-                                    <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-2xl animate-in slide-in-from-top-2">
-                                        <div className="flex items-center gap-3">
-                                    
-                                            <div>
-                                                <div className="font-bold text-slate-900">{selectedStudent.HoTen}</div>
-                                                <div className="text-xs text-blue-600 font-semibold">MSV: {selectedStudent.MaSV} • Phòng: {selectedStudent.TenPhong}</div>
-                                            </div>
+                                    <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-2xl">
+                                        <div>
+                                            <div className="font-bold text-slate-900">{selectedStudent.HoTen}</div>
+                                            <div className="text-xs text-blue-600 font-semibold uppercase tracking-tighter">MSV: {selectedStudent.MaSV} • Phòng {selectedStudent.TenPhong}</div>
                                         </div>
-                                        <button 
-                                            type="button" 
-                                            onClick={() => setSelectedStudent(null)}
-                                            className="text-xs font-bold text-red-500 hover:underline"
-                                        >
-                                            Thay đổi
-                                        </button>
+                                        <button type="button" onClick={() => {setSelectedStudent(null); setActiveContract(null);}} className="text-xs font-bold text-red-500 hover:underline uppercase">Thay đổi</button>
                                     </div>
                                 ) : (
-                                    /* Hiển thị Ô TÌM KIẾM khi CHƯA CHỌN */
                                     <div className="space-y-3">
                                         <div className="relative">
                                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                            <input 
-                                                type="text"
-                                                placeholder="Tìm tên, mã sinh viên hoặc phòng..."
-                                                className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#00529C] transition-all text-sm font-medium"
-                                                value={studentSearch}
-                                                onChange={(e) => setStudentSearch(e.target.value)}
-                                            />
+                                            <input type="text" placeholder="Tìm tên hoặc mã sinh viên..." className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:bg-white focus:border-[#00529C] text-sm font-medium" value={studentSearch} onChange={(e) => setStudentSearch(e.target.value)} />
                                         </div>
-
-                                        {/* Danh sách kết quả lọc */}
-                                        <div className="border border-slate-100 rounded-2xl max-h-48 overflow-y-auto bg-slate-50/30 divide-y divide-slate-100">
-                                            {isFetching ? (
-                                                <div className="p-10 text-center"><Loader2 size={20} className="animate-spin mx-auto text-slate-300" /></div>
-                                            ) : filteredStudentList.length > 0 ? (
-                                                filteredStudentList.map(sv => (
-                                                    <div 
-                                                        key={sv.MaSV}
-                                                        onClick={() => handleSelect(sv)}
-                                                        className="flex items-center justify-between p-3 hover:bg-white cursor-pointer transition-all group"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <div>
-                                                                <div className="text-sm font-bold text-slate-700">{sv.HoTen}</div>
-                                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">MSV: {sv.MaSV}</div>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-[10px] font-black text-[#00529C] bg-blue-50 px-2 py-1 rounded-md">P.{sv.TenPhong}</div>
+                                        <div className="border border-slate-100 rounded-2xl max-h-40 overflow-y-auto bg-slate-50/30 divide-y divide-slate-100">
+                                            {isFetching ? <div className="p-10 text-center"><Loader2 size={20} className="animate-spin mx-auto text-slate-300" /></div> : 
+                                            filteredStudentList.map(sv => (
+                                                <div key={sv.MaSV} onClick={() => handleSelect(sv)} className="flex items-center justify-between p-3 hover:bg-white cursor-pointer transition-all">
+                                                    <div>
+                                                        <div className="text-sm font-bold text-slate-700">{sv.HoTen}</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">MSV: {sv.MaSV}</div>
                                                     </div>
-                                                ))
-                                            ) : (
-                                                <div className="p-6 text-center text-slate-400 text-xs italic">Không tìm thấy sinh viên phù hợp</div>
-                                            )}
+                                                    <div className="text-[10px] font-black text-[#00529C] bg-blue-50 px-2 py-1 rounded-md">P.{sv.TenPhong}</div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 )}
                             </div>
+
+                            {/* --- PHẦN MỚI: PREVIEW HỢP ĐỒNG VÀ SỐ TIỀN --- */}
+                            {isFetchingContract ? (
+    <div className="p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 flex flex-col items-center animate-pulse">
+        <Loader2 className="animate-spin text-blue-500 mb-2" size={20} />
+        <span className="text-[10px] font-bold text-slate-400 uppercase font-sans">Đang tính toán số tiền...</span>
+    </div>
+) : previewData && (
+    <div className="bg-white rounded-[14px] p-6 border-2 border-blue-100 shadow-sm relative overflow-hidden group font-sans">
+        
+        <div className="relative z-10 space-y-4">
+            {/* Header */}
+            <div className="flex justify-between items-center border-b border-slate-100 pb-3">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-800">Thông tin hợp đồng</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">Hiệu lực</span>
+            </div>
+            
+            {/* Thời gian */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 mt-0.5">
+                    <Calendar size={14} className="text-slate-400" />
+                    <span className="text-xs font-bold text-slate-700">{previewData.startDate}</span>
+                    <ArrowRight size={12} className="text-slate-400" />
+                    <span className="text-xs font-bold text-slate-700">{previewData.endDate}</span>
+                </div>
+                <span className="text-xs font-bold text-slate-500">{previewData.months} tháng</span>
+            </div>
+
+            {/* PHẦN CHI TIẾT TÍNH TOÁN MỚI BỔ SUNG */}
+            <div className="space-y-2 py-3 border-y border-slate-50">
+                <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Tổng giá trị hợp đồng:</span>
+                    <span className="text-xs font-bold text-slate-700">{previewData.totalContractValue.toLocaleString()}đ</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-tight">Đã lập hóa đơn trước đó:</span>
+                    <span className="text-xs font-bold text-emerald-600">-{previewData.alreadyBilled.toLocaleString()}đ</span>
+                </div>
+            </div>
+
+            {/* Số tiền chênh lệch cuối cùng */}
+            <div className="pt-1 flex items-end justify-between">
+                <div>
+                    <p className="text-[12px] font-bold uppercase text-blue-500 tracking-wider">Số tiền phòng cần thu:</p>
+                    
+                </div>
+                <h2 className="text-2xl font-black tracking-tighter text-[#00529C]">
+                    {previewData.amountToBill.toLocaleString()}
+                    <span className="text-sm ml-1 font-bold not-italic text-slate-400 ">đ</span>
+                </h2>
+            </div>
+
+            
+        </div>
+    </div>
+)}
 
                             {/* CHỌN HỌC KỲ */}
                             <div className="space-y-3">
